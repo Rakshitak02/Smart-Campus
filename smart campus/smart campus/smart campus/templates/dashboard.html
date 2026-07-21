@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}<i class="bi bi-speedometer2 me-2" style="color:var(--neon-blue)"></i>Admin Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Row -->
+<div class="row g-3 mb-4" id="kpiRow">
+  <div class="col-6 col-md-3">
+    <div class="stat-card blue">
+      <div class="stat-icon blue"><i class="bi bi-building"></i></div>
+      <div><div class="stat-value" style="color:var(--neon-blue)" id="kpiRooms">–</div>
+      <div class="stat-label">Total Rooms</div>
+      <div class="stat-change up" id="kpiAvailPct">–% available</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card green">
+      <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
+      <div><div class="stat-value text-success" id="kpiOccupancy">–</div>
+      <div class="stat-label">Avg Occupancy</div>
+      <div class="stat-change" id="kpiOccTrend">campus-wide</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card yellow">
+      <div class="stat-icon yellow"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <div><div class="stat-value" style="color:var(--neon-yellow)" id="kpiIssues">–</div>
+      <div class="stat-label">Open Issues</div>
+      <div class="stat-change" id="kpiIssuesSub">–</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card red">
+      <div class="stat-icon red"><i class="bi bi-tools"></i></div>
+      <div><div class="stat-value text-danger" id="kpiFaulty">–</div>
+      <div class="stat-label">Faulty Resources</div>
+      <div class="stat-change down" id="kpiFaultySub">need attention</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="glass-card glow-blue">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-graph-up"></i> Occupancy Trend (24h)</div>
+        <span style="font-size:11px;color:var(--text-muted)">Avg campus utilization by hour</span>
+      </div>
+      <div class="chart-wrap"><canvas id="occupancyTrendChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="glass-card glow-purple">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-pie-chart-fill"></i> Room Status</div>
+      </div>
+      <div class="chart-wrap" style="max-height:220px">
+        <canvas id="roomStatusChart"></canvas>
+      </div>
+      <div id="roomStatusLegend" class="mt-3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-bar-chart-fill"></i> Issues by Category</div>
+      </div>
+      <div class="chart-wrap"><canvas id="issueCatChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-activity"></i> Resource Health</div>
+      </div>
+      <div class="chart-wrap"><canvas id="healthChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-building-fill"></i> Occupancy by Building</div>
+      </div>
+      <div class="chart-wrap"><canvas id="buildingOccChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Board -->
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-exclamation-circle-fill text-warning"></i> Recent Issues</div>
+        <a href="/issues" class="btn-cyber outline sm">View All</a>
+      </div>
+      <table class="cyber-table">
+        <thead><tr><th>Issue</th><th>Location</th><th>Priority</th><th>Status</th></tr></thead>
+        <tbody id="recentIssuesTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-tools text-danger"></i> Maintenance Alerts</div>
+        <a href="/maintenance" class="btn-cyber outline sm">View All</a>
+      </div>
+      <div id="maintenanceAlerts"></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-activity" style="color:var(--neon-green)"></i> Live Activity Feed</div>
+        <button class="btn-cyber outline sm" onclick="loadFeed()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div id="liveFeed" style="max-height:320px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Resource Utilization Row -->
+<div class="row g-3 mt-0">
+  <div class="col-12">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-box-seam-fill" style="color:var(--neon-orange)"></i> Resource Utilization by Type</div>
+        <button class="btn-cyber outline sm" onclick="simulateTick()"><i class="bi bi-lightning-fill"></i> Simulate Tick</button>
+      </div>
+      <div id="resourceUtilBars"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

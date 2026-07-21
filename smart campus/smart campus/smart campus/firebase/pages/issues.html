@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Issue Engine — Smart Campus</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="bg-fx" id="bgFx"></div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><div class="brand-icon"><i class="bi bi-cpu-fill"></i></div>
+    <div class="brand-text"><div class="brand-title">SmartCampus</div><div class="brand-sub">Digital Twin v3.0</div></div></div>
+  <div class="sidebar-status"><span class="pulse-dot"></span><span>Firebase Live</span>
+    <span class="ms-auto" style="font-size:10px;color:var(--muted)" id="sidebarClock"></span></div>
+  <ul class="sidebar-nav">
+    <li><a href="../index.html" class="nav-link"><i class="bi bi-map-fill"></i><span class="nav-label">Campus Twin</span></a></li>
+    <li><a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a></li>
+    <li><a href="issues.html" class="nav-link active"><i class="bi bi-exclamation-triangle-fill"></i><span class="nav-label">Issue Engine</span><span class="nav-badge" id="openIssuesBadge">–</span></a></li>
+    <li><a href="maintenance.html" class="nav-link"><i class="bi bi-tools"></i><span class="nav-label">Maintenance AI</span></a></li>
+    <li><a href="analytics.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i><span class="nav-label">Analytics</span></a></li>
+    <li><a href="resources.html" class="nav-link"><i class="bi bi-box-seam-fill"></i><span class="nav-label">Resources</span></a></li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="sf-item"><i class="bi bi-building" style="color:var(--blue)"></i><span class="sf-label" id="sfRooms">–</span></div>
+    <div class="sf-item"><i class="bi bi-exclamation-circle" style="color:var(--red)"></i><span class="sf-label" id="sfIssues">–</span></div>
+  </div>
+</nav>
+
+<div class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+    <div class="topbar-title"><i class="bi bi-exclamation-triangle-fill me-2" style="color:var(--yellow)"></i>Smart Issue Engine</div>
+    <div class="topbar-right">
+      <div class="live-pill"><span class="pulse-dot"></span>LIVE</div>
+      <div class="topbar-stat"><i class="bi bi-building"></i><span id="tbAvail">–</span></div>
+      <div class="topbar-stat" style="color:var(--yellow)"><i class="bi bi-exclamation-circle"></i><span id="tbIssues">–</span></div>
+      <div class="topbar-stat" style="color:var(--red)"><i class="bi bi-x-circle"></i><span id="tbFaults">–</span></div>
+      <button class="notif-btn"><i class="bi bi-bell-fill"></i><span class="notif-dot" id="notifBadge">0</span></button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <div class="row g-3">
+      <!-- Report form -->
+      <div class="col-lg-4">
+        <div class="glass-card glow-blue" style="position:sticky;top:70px">
+          <div class="sec-title mb-4"><i class="bi bi-plus-circle-fill"></i>Report New Issue</div>
+          <div id="aiResult" style="display:none" class="mb-3"></div>
+          <form id="issueForm">
+            <div class="mb-3">
+              <label class="cyber-label">Issue Title *</label>
+              <input type="text" class="cyber-input" id="fTitle" placeholder="e.g. Projector not working in A101" required/>
+            </div>
+            <div class="mb-3">
+              <label class="cyber-label">Location *</label>
+              <select class="cyber-select" id="fLocation" required>
+                <option value="">Select room…</option>
+                <optgroup label="Engineering Block">
+                  <option value="A101">A101 – Lab A101</option><option value="A102">A102 – Class A102</option>
+                  <option value="A103">A103 – Lab A103</option><option value="A104">A104 – Class A104</option>
+                </optgroup>
+                <optgroup label="Science Block">
+                  <option value="B101">B101 – Lab B101</option><option value="B102">B102 – Class B102</option>
+                  <option value="B103">B103 – Lab B103</option><option value="B104">B104 – Class B104</option>
+                </optgroup>
+                <optgroup label="Admin Block">
+                  <option value="C101">C101 – Server Room</option><option value="C102">C102 – Admin Office</option>
+                  <option value="C103">C103 – Conference</option>
+                </optgroup>
+                <optgroup label="Library">
+                  <option value="D101">D101 – Reading Hall</option><option value="D102">D102 – Study Room</option>
+                  <option value="D103">D103 – Media Lab</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="E101">E101 – Gymnasium</option><option value="F101">F101 – Main Dining</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="cyber-label">Description *</label>
+              <textarea class="cyber-textarea" id="fDesc" rows="4" placeholder="Describe the issue in detail…" required></textarea>
+            </div>
+            <button type="submit" class="btn-cyber primary w-100">
+              <i class="bi bi-cpu-fill"></i>Analyze & Submit with AI
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Issues list -->
+      <div class="col-lg-8">
+        <!-- Filter bar -->
+        <div class="glass-card mb-3" style="padding:14px">
+          <div class="d-flex gap-2 flex-wrap align-items-center">
+            <span style="font-size:12px;color:var(--muted)">Filter:</span>
+            <button class="btn-cyber outline sm filter-btn active" data-f="all">All</button>
+            <button class="btn-cyber outline sm filter-btn" data-f="open">Open</button>
+            <button class="btn-cyber outline sm filter-btn" data-f="in_progress">In Progress</button>
+            <button class="btn-cyber outline sm filter-btn" data-f="resolved">Resolved</button>
+            <div class="ms-auto">
+              <select class="cyber-select" id="priFilter" style="width:130px;padding:5px 10px;font-size:12px">
+                <option value="">All Priority</option>
+                <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- Stats -->
+        <div class="row g-2 mb-3" id="issueStats"></div>
+        <!-- Cards -->
+        <div id="issueCards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+import { db, C, seedIfEmpty, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp }
+  from "../js/firebase-config.js";
+import { showToast, startClock, initSidebar, statusBadge, priorityBadge, timeAgo }
+  from "../js/app.js";
+import { analyzeIssue } from "../js/ai-engine.js";
+
+(function(){ const c=document.getElementById("bgFx"); for(let i=0;i<28;i++){const p=document.createElement("div");p.className="particle";p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*12}s`;c.appendChild(p);}})();
+startClock("sidebarClock"); initSidebar();
+
+let allIssues = [], statusFilter = "all", priFilter = "";
+
+async function init() {
+  await seedIfEmpty();
+  onSnapshot(collection(db, C.ISSUES), snap => {
+    allIssues = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+      .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    renderStats(); renderCards();
+    const open = allIssues.filter(i=>i.status==="open").length;
+    document.getElementById("openIssuesBadge").textContent = open;
+    document.getElementById("notifBadge").textContent = open;
+    document.getElementById("tbIssues").textContent = open;
+    document.getElementById("sfIssues").textContent = open+" issues";
+  });
+}
+
+function renderStats() {
+  const open = allIssues.filter(i=>i.status==="open").length;
+  const inProg = allIssues.filter(i=>i.status==="in_progress").length;
+  const res = allIssues.filter(i=>i.status==="resolved").length;
+  document.getElementById("issueStats").innerHTML = `
+    <div class="col-4"><div class="stat-card yellow" style="padding:12px">
+      <div class="stat-icon yellow" style="width:36px;height:36px;font-size:16px"><i class="bi bi-exclamation-circle"></i></div>
+      <div><div class="stat-value" style="font-size:22px;color:var(--yellow)">${open}</div><div class="stat-label">Open</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card blue" style="padding:12px">
+      <div class="stat-icon blue" style="width:36px;height:36px;font-size:16px"><i class="bi bi-gear-fill"></i></div>
+      <div><div class="stat-value" style="font-size:22px;color:var(--blue)">${inProg}</div><div class="stat-label">In Progress</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card green" style="padding:12px">
+      <div class="stat-icon green" style="width:36px;height:36px;font-size:16px"><i class="bi bi-check-circle"></i></div>
+      <div><div class="stat-value" style="font-size:22px;color:var(--green)">${res}</div><div class="stat-label">Resolved</div></div>
+    </div></div>`;
+}
+
+function renderCards() {
+  let data = allIssues;
+  if (statusFilter !== "all") data = data.filter(i=>i.status===statusFilter);
+  if (priFilter) data = data.filter(i=>i.priority===priFilter);
+  const borderColor = { high:"var(--red)", medium:"var(--yellow)", low:"var(--green)" };
+  document.getElementById("issueCards").innerHTML = data.length
+    ? data.map(i=>`
+      <div class="glass-card mb-3" style="padding:16px;border-left:3px solid ${borderColor[i.priority]||"var(--blue)"}">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div style="font-size:14px;font-weight:600">${i.title}</div>
+            <div style="font-size:11px;color:var(--muted)">#${i.id.slice(-6)} · ${i.location} · ${timeAgo(i.createdAt)}</div>
+          </div>
+          <div class="d-flex gap-2">${priorityBadge(i.priority)} ${statusBadge(i.status)}</div>
+        </div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">${i.description}</p>
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-3"><div style="font-size:10px;color:var(--muted);text-transform:uppercase">Category</div>
+            <div style="font-size:12px;font-weight:600;color:var(--blue)">${i.category}</div></div>
+          <div class="col-6 col-md-3"><div style="font-size:10px;color:var(--muted);text-transform:uppercase">Department</div>
+            <div style="font-size:12px;font-weight:600">${i.department}</div></div>
+          <div class="col-6 col-md-3"><div style="font-size:10px;color:var(--muted);text-transform:uppercase">Technician</div>
+            <div style="font-size:12px;font-weight:600;color:var(--purple)">${i.technician}</div></div>
+          <div class="col-6 col-md-3"><div style="font-size:10px;color:var(--muted);text-transform:uppercase">ETA</div>
+            <div style="font-size:12px;font-weight:600;color:var(--yellow)">${i.eta}</div></div>
+        </div>
+        <div class="d-flex gap-2">
+          ${i.status!=="in_progress"?`<button class="btn-cyber outline sm" onclick="setStatus('${i.id}','in_progress')"><i class="bi bi-gear"></i> Start</button>`:""}
+          ${i.status!=="resolved"?`<button class="btn-cyber success sm" onclick="setStatus('${i.id}','resolved')"><i class="bi bi-check"></i> Resolve</button>`:""}
+          ${i.status==="resolved"?`<span style="font-size:12px;color:var(--green)"><i class="bi bi-check-circle-fill"></i> Resolved</span>`:""}
+        </div>
+      </div>`).join("")
+    : `<div class="glass-card text-center py-5" style="color:var(--muted)"><i class="bi bi-inbox" style="font-size:32px"></i><div class="mt-2">No issues found</div></div>`;
+}
+
+window.setStatus = async function(id, status) {
+  await updateDoc(doc(db, C.ISSUES, id), { status, updatedAt: serverTimestamp() });
+  showToast(`Issue marked as ${status}`, "success");
+};
+
+document.getElementById("issueForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = e.target.querySelector("button[type=submit]");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Analyzing…`;
+
+  const title = document.getElementById("fTitle").value;
+  const desc  = document.getElementById("fDesc").value;
+  const loc   = document.getElementById("fLocation").value;
+  const ai    = analyzeIssue(title, desc);
+
+  await addDoc(collection(db, C.ISSUES), {
+    title, description:desc, location:loc,
+    ...ai, status:"open",
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  });
+
+  document.getElementById("aiResult").style.display = "block";
+  document.getElementById("aiResult").innerHTML = `
+    <div class="cyber-alert info">
+      <div style="width:100%">
+        <div style="font-weight:600;margin-bottom:8px"><i class="bi bi-cpu-fill"></i> AI Analysis Complete
+          <span style="font-size:11px;color:var(--muted);margin-left:8px">${ai.confidence}% confidence</span></div>
+        <div class="row g-2">
+          <div class="col-6"><span style="font-size:10px;color:var(--muted)">CATEGORY</span><br><strong>${ai.category}</strong></div>
+          <div class="col-6"><span style="font-size:10px;color:var(--muted)">PRIORITY</span><br>${priorityBadge(ai.priority)}</div>
+          <div class="col-6"><span style="font-size:10px;color:var(--muted)">DEPARTMENT</span><br><strong>${ai.department}</strong></div>
+          <div class="col-6"><span style="font-size:10px;color:var(--muted)">TECHNICIAN</span><br><strong style="color:var(--purple)">${ai.technician}</strong></div>
+          <div class="col-6"><span style="font-size:10px;color:var(--muted)">ETA</span><br><strong style="color:var(--yellow)">${ai.eta}</strong></div>
+        </div>
+      </div>
+    </div>`;
+
+  e.target.reset();
+  btn.disabled = false;
+  btn.innerHTML = `<i class="bi bi-cpu-fill"></i>Analyze & Submit with AI`;
+  showToast("Issue submitted and analyzed by AI", "success");
+});
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    statusFilter = btn.dataset.f;
+    renderCards();
+  });
+});
+document.getElementById("priFilter").addEventListener("change", e => { priFilter=e.target.value; renderCards(); });
+
+init();
+</script>
+</body>
+</html>

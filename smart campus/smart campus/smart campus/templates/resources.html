@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Resource Exchange{% endblock %}
+{% block page_title %}<i class="bi bi-box-seam-fill me-2" style="color:var(--neon-orange)"></i>Resource Exchange{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-4" id="resStats"></div>
+
+<div class="row g-3">
+  <!-- Resource Grid -->
+  <div class="col-lg-9">
+    <div class="glass-card mb-3" style="padding:14px">
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <span style="font-size:12px;color:var(--text-muted)">Filter:</span>
+        <button class="btn-cyber outline sm res-filter active" data-filter="all">All</button>
+        <button class="btn-cyber outline sm res-filter" data-filter="available">Available</button>
+        <button class="btn-cyber outline sm res-filter" data-filter="busy">In Use</button>
+        <button class="btn-cyber outline sm res-filter" data-filter="fault">Fault</button>
+        <div class="ms-auto">
+          <select class="cyber-select" id="typeFilter" style="width:140px;padding:5px 10px;font-size:12px">
+            <option value="">All Types</option>
+            <option value="projector">Projectors</option>
+            <option value="pc">PCs</option>
+            <option value="server">Servers</option>
+            <option value="wifi">WiFi Nodes</option>
+            <option value="3d_printer">3D Printers</option>
+            <option value="microscope">Microscopes</option>
+            <option value="av_system">AV Systems</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="row g-3" id="resourceGrid"></div>
+  </div>
+
+  <!-- Reserve Panel -->
+  <div class="col-lg-3">
+    <div class="glass-card" style="position:sticky;top:80px">
+      <div class="section-title mb-3"><i class="bi bi-calendar-check-fill"></i> Reserve Resource</div>
+      <div id="reserveForm" style="display:none">
+        <div class="mb-3 p-3" style="background:rgba(0,212,255,0.08);border-radius:8px;border:1px solid rgba(0,212,255,0.2)">
+          <div style="font-size:13px;font-weight:600" id="reserveName">–</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="reserveLocation">–</div>
+        </div>
+        <div class="mb-3">
+          <label class="cyber-label">Your Name</label>
+          <input type="text" class="cyber-input" id="reserveUser" placeholder="Enter your name">
+        </div>
+        <div class="mb-3">
+          <label class="cyber-label">Duration (hours)</label>
+          <select class="cyber-select" id="reserveHours">
+            <option value="1">1 hour</option>
+            <option value="2">2 hours</option>
+            <option value="3">3 hours</option>
+            <option value="4">4 hours</option>
+            <option value="8">Full day (8h)</option>
+          </select>
+        </div>
+        <button class="btn-cyber primary w-100 mb-2" onclick="confirmReserve()">
+          <i class="bi bi-calendar-check"></i> Confirm Reservation
+        </button>
+        <button class="btn-cyber outline sm w-100" onclick="cancelReserve()">Cancel</button>
+      </div>
+      <div id="reservePlaceholder" style="text-align:center;padding:20px;color:var(--text-muted)">
+        <i class="bi bi-hand-index" style="font-size:32px;display:block;margin-bottom:8px"></i>
+        <div style="font-size:13px">Click "Reserve" on any available resource</div>
+      </div>
+    </div>
+
+    <!-- Resource type breakdown -->
+    <div class="glass-card mt-3">
+      <div class="section-title mb-3"><i class="bi bi-pie-chart"></i> By Type</div>
+      <div class="chart-wrap" style="max-height:180px"><canvas id="typeChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allResources = [];
+let currentFilter = 'all';
+let typeFilter = '';
+let selectedResource = null;
+let typeChart = null;
+
+const TYPE_ICONS = {
+  projector: 'bi-projector-fill', pc: 'bi-pc-display', server: 'bi-server',
+  wifi: 'bi-wifi', '3d_printer': 'bi-printer-fill', microscope: 'bi-eye-fill',
+  av_system: 'bi-camera-video-fill',
+};
+
+async function loadResources() {
+  const r = await fetch('/api/resources');
+  allResources = await r.json();
+  renderStats();
+  renderGrid();
+  renderTypeChart();
+}
+
+function renderStats() {
+  const avail = allResources.filter(r => r.status === 'available').length;
+  const busy = allResources.filter(r => r.status === 'busy').length;
+  const fault = allResources.filter(r => r.status === 'fault').length;
+  document.getElementById('resStats').innerHTML = `
+    <div class="col-6 col-md-3"><div class="stat-card blue" style="padding:14px">
+      <div class="stat-icon blue" style="width:40px;height:40px;font-size:18px"><i class="bi bi-box-seam"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--neon-blue)">${allResources.length}</div><div class="stat-label">Total Resources</div></div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="stat-card green" style="padding:14px">
+      <div class="stat-icon green" style="width:40px;height:40px;font-size:18px"><i class="bi bi-check-circle"></i></div>
+      <div><div class="stat-value text-success" style="font-size:24px">${avail}</div><div class="stat-label">Available</div></div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="stat-card yellow" style="padding:14px">
+      <div class="stat-icon yellow" style="width:40px;height:40px;font-size:18px"><i class="bi bi-clock"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--neon-yellow)">${busy}</div><div class="stat-label">In Use</div></div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="stat-card red" style="padding:14px">
+      <div class="stat-icon red" style="width:40px;height:40px;font-size:18px"><i class="bi bi-x-circle"></i></div>
+      <div><div class="stat-value text-danger" style="font-size:24px">${fault}</div><div class="stat-label">Fault</div></div>
+    </div></div>`;
+}
+
+function renderGrid() {
+  let data = allResources;
+  if (currentFilter !== 'all') data = data.filter(r => r.status === currentFilter);
+  if (typeFilter) data = data.filter(r => r.type === typeFilter);
+
+  const c = document.getElementById('resourceGrid');
+  if (!data.length) {
+    c.innerHTML = '<div class="col-12"><div class="glass-card text-center py-5" style="color:var(--text-muted)"><i class="bi bi-inbox" style="font-size:32px"></i><div class="mt-2">No resources found</div></div></div>';
+    return;
+  }
+  c.innerHTML = data.map(r => {
+    const pred = r.failure_prediction;
+    const icon = TYPE_ICONS[r.type] || 'bi-box';
+    const healthColor = r.health_score > 70 ? 'var(--neon-green)' : r.health_score > 40 ? 'var(--neon-yellow)' : 'var(--neon-red)';
+    return `
+      <div class="col-sm-6 col-xl-4">
+        <div class="glass-card" style="padding:16px;border-top:2px solid ${r.status==='available'?'var(--neon-green)':r.status==='busy'?'var(--neon-yellow)':'var(--neon-red)'}">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="stat-icon ${r.status==='available'?'green':r.status==='busy'?'yellow':'red'}" style="width:40px;height:40px;font-size:18px">
+              <i class="bi ${icon}"></i>
+            </div>
+            <span class="status-badge ${r.status}">${r.status}</span>
+          </div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.name}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">
+            <i class="bi bi-geo-alt"></i> ${r.location} · ${r.type.replace('_',' ')}
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:11px;color:var(--text-muted)">Health</span>
+            <span style="font-size:11px;font-weight:600;color:${healthColor}">${r.health_score}%</span>
+          </div>
+          <div class="cyber-progress mb-2">
+            <div class="cyber-progress-bar ${r.health_score>70?'green':r.health_score>40?'yellow':'red'}" style="width:${r.health_score}%"></div>
+          </div>
+          <div class="d-flex justify-content-between mb-3">
+            <span style="font-size:11px;color:var(--text-muted)">Failure Risk</span>
+            <span style="font-size:11px;font-weight:600;color:${pred.label==='Critical'?'var(--neon-red)':pred.label==='Warning'?'var(--neon-yellow)':'var(--neon-green)'}">${pred.risk}% · ${pred.label}</span>
+          </div>
+          ${r.reserved_by ? `<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px"><i class="bi bi-person-fill"></i> ${r.reserved_by}</div>` : ''}
+          <div class="d-flex gap-2">
+            ${r.status === 'available' ? `<button class="btn-cyber primary sm flex-fill" onclick="startReserve(${r.id},'${r.name}','${r.location}')"><i class="bi bi-calendar-plus"></i> Reserve</button>` : ''}
+            ${r.status === 'busy' ? `<button class="btn-cyber outline sm flex-fill" onclick="releaseResource(${r.id})"><i class="bi bi-unlock"></i> Release</button>` : ''}
+            ${r.status === 'fault' ? `<span style="font-size:11px;color:var(--neon-red)"><i class="bi bi-tools"></i> Needs repair</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTypeChart() {
+  const types = {};
+  allResources.forEach(r => { types[r.type] = (types[r.type] || 0) + 1; });
+  const labels = Object.keys(types).map(t => t.replace('_',' '));
+  const values = Object.values(types);
+  const colors = ['#00d4ff','#7b2fff','#00ff88','#ffcc00','#ff3366','#ff6600','#00aaff'];
+
+  const ctx = document.getElementById('typeChart').getContext('2d');
+  if (typeChart) typeChart.destroy();
+  typeChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors.slice(0, labels.length).map(c => c + 'bb'),
+        borderColor: colors.slice(0, labels.length),
+        borderWidth: 1, hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: true, cutout: '55%',
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 } } } }
+    }
+  });
+}
+
+function startReserve(id, name, location) {
+  selectedResource = id;
+  document.getElementById('reserveName').textContent = name;
+  document.getElementById('reserveLocation').textContent = location;
+  document.getElementById('reserveForm').style.display = 'block';
+  document.getElementById('reservePlaceholder').style.display = 'none';
+}
+
+function cancelReserve() {
+  selectedResource = null;
+  document.getElementById('reserveForm').style.display = 'none';
+  document.getElementById('reservePlaceholder').style.display = 'block';
+}
+
+async function confirmReserve() {
+  const user = document.getElementById('reserveUser').value.trim();
+  if (!user) { showToast('Please enter your name', 'error'); return; }
+  const hours = document.getElementById('reserveHours').value;
+  await fetch(`/api/resources/${selectedResource}/reserve`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ user, hours })
+  });
+  cancelReserve();
+  await loadResources();
+  showToast(`Resource reserved for ${hours}h`, 'success');
+}
+
+async function releaseResource(id) {
+  await fetch(`/api/resources/${id}/release`, { method: 'POST' });
+  await loadResources();
+  showToast('Resource released', 'success');
+}
+
+document.querySelectorAll('.res-filter').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.res-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderGrid();
+  });
+});
+
+document.getElementById('typeFilter').addEventListener('change', e => {
+  typeFilter = e.target.value;
+  renderGrid();
+});
+
+function showToast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast-msg ${type}`;
+  t.innerHTML = `<i class="bi bi-${type==='success'?'check-circle-fill':type==='error'?'x-circle-fill':'info-circle-fill'}"></i> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+loadResources();
+setInterval(loadResources, 30000);
+</script>
+{% endblock %}

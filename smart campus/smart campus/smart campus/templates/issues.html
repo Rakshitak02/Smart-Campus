@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}Smart Issue Engine{% endblock %}
+{% block page_title %}<i class="bi bi-exclamation-triangle-fill me-2" style="color:var(--neon-yellow)"></i>Smart Issue Engine{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <!-- Report Form -->
+  <div class="col-lg-4">
+    <div class="glass-card glow-blue" style="position:sticky;top:80px">
+      <div class="section-title mb-4"><i class="bi bi-plus-circle-fill"></i> Report New Issue</div>
+
+      <div id="aiResultBox" style="display:none" class="mb-3"></div>
+
+      <form id="issueForm">
+        <div class="mb-3">
+          <label class="cyber-label">Issue Title *</label>
+          <input type="text" class="cyber-input" id="issueTitle" placeholder="e.g. Projector not working in A101" required>
+        </div>
+        <div class="mb-3">
+          <label class="cyber-label">Location *</label>
+          <select class="cyber-select" id="issueLocation" required>
+            <option value="">Select room…</option>
+            <optgroup label="Engineering Block">
+              <option value="A101">A101 – Lab A101</option>
+              <option value="A102">A102 – Class A102</option>
+              <option value="A103">A103 – Lab A103</option>
+              <option value="A104">A104 – Class A104</option>
+            </optgroup>
+            <optgroup label="Science Block">
+              <option value="B101">B101 – Lab B101</option>
+              <option value="B102">B102 – Class B102</option>
+              <option value="B103">B103 – Lab B103</option>
+              <option value="B104">B104 – Class B104</option>
+            </optgroup>
+            <optgroup label="Admin Block">
+              <option value="C101">C101 – Server Room</option>
+              <option value="C102">C102 – Admin Office</option>
+              <option value="C103">C103 – Conference</option>
+            </optgroup>
+            <optgroup label="Library">
+              <option value="D101">D101 – Reading Hall</option>
+              <option value="D102">D102 – Study Room</option>
+              <option value="D103">D103 – Media Lab</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="E101">E101 – Gymnasium</option>
+              <option value="F101">F101 – Main Dining</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="cyber-label">Description *</label>
+          <textarea class="cyber-textarea" id="issueDesc" rows="4"
+            placeholder="Describe the issue in detail…" required></textarea>
+        </div>
+        <button type="submit" class="btn-cyber primary w-100">
+          <i class="bi bi-cpu-fill"></i> Analyze & Submit with AI
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Issues List -->
+  <div class="col-lg-8">
+    <!-- Filter bar -->
+    <div class="glass-card mb-3" style="padding:14px">
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <span style="font-size:12px;color:var(--text-muted)">Filter:</span>
+        <button class="btn-cyber outline sm filter-btn active" data-filter="all">All</button>
+        <button class="btn-cyber outline sm filter-btn" data-filter="open">Open</button>
+        <button class="btn-cyber outline sm filter-btn" data-filter="in_progress">In Progress</button>
+        <button class="btn-cyber outline sm filter-btn" data-filter="resolved">Resolved</button>
+        <div class="ms-auto d-flex gap-2">
+          <select class="cyber-select" id="priorityFilter" style="width:120px;padding:5px 10px;font-size:12px">
+            <option value="">All Priority</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="row g-2 mb-3" id="issueStats"></div>
+
+    <!-- Issues cards -->
+    <div id="issuesList"></div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allIssues = [];
+let currentFilter = 'all';
+let priorityFilter = '';
+
+async function loadIssues() {
+  const r = await fetch('/api/issues');
+  allIssues = await r.json();
+  renderStats();
+  renderIssues();
+}
+
+function renderStats() {
+  const counts = { open: 0, in_progress: 0, resolved: 0 };
+  allIssues.forEach(i => { if (counts[i.status] !== undefined) counts[i.status]++; });
+  document.getElementById('issueStats').innerHTML = `
+    <div class="col-4"><div class="stat-card yellow" style="padding:12px">
+      <div class="stat-icon yellow" style="width:36px;height:36px;font-size:16px"><i class="bi bi-exclamation-circle"></i></div>
+      <div><div class="stat-value" style="font-size:22px;color:var(--neon-yellow)">${counts.open}</div>
+      <div class="stat-label">Open</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card blue" style="padding:12px">
+      <div class="stat-icon blue" style="width:36px;height:36px;font-size:16px"><i class="bi bi-gear-fill"></i></div>
+      <div><div class="stat-value" style="font-size:22px;color:var(--neon-blue)">${counts.in_progress}</div>
+      <div class="stat-label">In Progress</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card green" style="padding:12px">
+      <div class="stat-icon green" style="width:36px;height:36px;font-size:16px"><i class="bi bi-check-circle"></i></div>
+      <div><div class="stat-value" style="font-size:22px;color:var(--neon-green)">${counts.resolved}</div>
+      <div class="stat-label">Resolved</div></div>
+    </div></div>`;
+}
+
+function renderIssues() {
+  let filtered = allIssues;
+  if (currentFilter !== 'all') filtered = filtered.filter(i => i.status === currentFilter);
+  if (priorityFilter) filtered = filtered.filter(i => i.priority === priorityFilter);
+
+  const c = document.getElementById('issuesList');
+  if (!filtered.length) {
+    c.innerHTML = '<div class="glass-card text-center py-5" style="color:var(--text-muted)"><i class="bi bi-inbox" style="font-size:32px"></i><div class="mt-2">No issues found</div></div>';
+    return;
+  }
+  c.innerHTML = filtered.map(i => `
+    <div class="glass-card mb-3" style="padding:16px;border-left:3px solid ${i.priority==='high'?'var(--neon-red)':i.priority==='medium'?'var(--neon-yellow)':'var(--neon-green)'}">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <div style="font-size:14px;font-weight:600">${i.title}</div>
+          <div style="font-size:11px;color:var(--text-muted)">#${i.id} · ${i.location} · ${new Date(i.created_at).toLocaleString()}</div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <span class="priority-badge ${i.priority}">${i.priority.toUpperCase()}</span>
+          <span class="status-badge ${i.status}">${i.status.replace('_',' ')}</span>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">${i.description}</p>
+      <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Category</div>
+          <div style="font-size:12px;font-weight:600;color:var(--neon-blue)">${i.category}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Department</div>
+          <div style="font-size:12px;font-weight:600">${i.department}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Technician</div>
+          <div style="font-size:12px;font-weight:600;color:var(--neon-purple)">${i.technician}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">ETA</div>
+          <div style="font-size:12px;font-weight:600;color:var(--neon-yellow)">${i.eta}</div>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        ${i.status !== 'in_progress' ? `<button class="btn-cyber outline sm" onclick="updateStatus(${i.id},'in_progress')"><i class="bi bi-gear"></i> Start</button>` : ''}
+        ${i.status !== 'resolved' ? `<button class="btn-cyber success sm" onclick="updateStatus(${i.id},'resolved')"><i class="bi bi-check"></i> Resolve</button>` : ''}
+        ${i.status === 'resolved' ? `<span style="font-size:12px;color:var(--neon-green)"><i class="bi bi-check-circle-fill"></i> Resolved</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateStatus(id, status) {
+  await fetch(`/api/issues/${id}/status`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  });
+  await loadIssues();
+  showToast(`Issue #${id} marked as ${status}`, 'success');
+}
+
+document.getElementById('issueForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analyzing…';
+
+  const payload = {
+    title: document.getElementById('issueTitle').value,
+    description: document.getElementById('issueDesc').value,
+    location: document.getElementById('issueLocation').value,
+  };
+
+  const r = await fetch('/api/issues', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const d = await r.json();
+  const ai = d.ai_analysis;
+
+  document.getElementById('aiResultBox').style.display = 'block';
+  document.getElementById('aiResultBox').innerHTML = `
+    <div class="cyber-alert info">
+      <div>
+        <div style="font-weight:600;margin-bottom:6px"><i class="bi bi-cpu-fill"></i> AI Analysis Complete</div>
+        <div class="row g-2">
+          <div class="col-6"><span style="color:var(--text-muted);font-size:11px">Category</span><br><strong>${ai.category}</strong></div>
+          <div class="col-6"><span style="color:var(--text-muted);font-size:11px">Priority</span><br><span class="priority-badge ${ai.priority}">${ai.priority}</span></div>
+          <div class="col-6"><span style="color:var(--text-muted);font-size:11px">Department</span><br><strong>${ai.department}</strong></div>
+          <div class="col-6"><span style="color:var(--text-muted);font-size:11px">Technician</span><br><strong style="color:var(--neon-purple)">${ai.technician}</strong></div>
+          <div class="col-6"><span style="color:var(--text-muted);font-size:11px">ETA</span><br><strong style="color:var(--neon-yellow)">${ai.eta}</strong></div>
+        </div>
+      </div>
+    </div>`;
+
+  e.target.reset();
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-cpu-fill"></i> Analyze & Submit with AI';
+  await loadIssues();
+  showToast('Issue submitted and analyzed by AI', 'success');
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderIssues();
+  });
+});
+
+document.getElementById('priorityFilter').addEventListener('change', e => {
+  priorityFilter = e.target.value;
+  renderIssues();
+});
+
+function showToast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast-msg ${type}`;
+  t.innerHTML = `<i class="bi bi-${type==='success'?'check-circle-fill':'info-circle-fill'}"></i> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+loadIssues();
+setInterval(loadIssues, 30000);
+</script>
+{% endblock %}

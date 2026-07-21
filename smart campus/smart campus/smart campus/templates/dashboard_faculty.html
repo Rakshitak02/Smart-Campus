@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block title %}Faculty Dashboard{% endblock %}
+{% block page_title %}<i class="bi bi-mortarboard-fill me-2" style="color:var(--neon-green)"></i>Faculty Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Welcome -->
+<div class="hod-welcome mb-4">
+  <div class="welcome-left">
+    <div class="welcome-avatar faculty"><i class="bi bi-mortarboard-fill"></i></div>
+    <div>
+      <div class="welcome-name">{{ user.name }} &nbsp;<span class="role-badge faculty"><i class="bi bi-mortarboard-fill"></i> Faculty</span></div>
+      <div class="welcome-sub">Manage attendance, post circulars & track resources · <span id="facClock" style="color:var(--neon-green)"></span></div>
+    </div>
+  </div>
+  <div class="welcome-actions">
+    <button class="btn-cyber success sm" onclick="openCircularModal()"><i class="bi bi-megaphone-fill"></i> Post Circular</button>
+    <a href="/issues" class="btn-cyber outline sm"><i class="bi bi-exclamation-triangle"></i> Report Issue</a>
+    <button class="btn-cyber outline sm" onclick="refreshFaculty()"><i class="bi bi-arrow-clockwise"></i></button>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card green">
+      <div class="kpi-icon"><i class="bi bi-door-open-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="facAvail">–</div>
+        <div class="kpi-label">Available Rooms</div>
+        <div class="kpi-sub">ready to use</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card blue">
+      <div class="kpi-icon"><i class="bi bi-box-seam-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="facFreeRes">–</div>
+        <div class="kpi-label">Free Equipment</div>
+        <div class="kpi-sub">available now</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card red">
+      <div class="kpi-icon"><i class="bi bi-person-x-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="facAbsent">–</div>
+        <div class="kpi-label">Absent Alerts</div>
+        <div class="kpi-sub">&gt;2 days absent</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card purple">
+      <div class="kpi-icon"><i class="bi bi-chat-square-dots-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="facSuggestions">–</div>
+        <div class="kpi-label">Pending Suggestions</div>
+        <div class="kpi-sub">from students</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 2: Attendance + Absent Alerts -->
+<div class="row g-3 mb-4">
+
+  <!-- Mark Attendance -->
+  <div class="col-lg-5">
+    <div class="dash-card border-green">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-calendar-check-fill" style="color:var(--neon-green)"></i> Mark Attendance</div>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="cyber-label">Subject</label>
+          <select class="cyber-select" id="facAttSubject">
+            <option>Data Structures</option>
+            <option>DBMS</option>
+            <option>Operating Systems</option>
+            <option>Computer Networks</option>
+            <option>Software Engineering</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="cyber-label">Date</label>
+          <input type="date" class="cyber-input" id="facAttDate"/>
+        </div>
+      </div>
+      <div id="facAttStudentList" style="max-height:220px;overflow-y:auto"></div>
+      <button class="btn-cyber success w-100 mt-3" onclick="submitFacAttendance()">
+        <i class="bi bi-check2-all"></i> Save Attendance
+      </button>
+      <div id="facAttMsg" class="mt-2"></div>
+    </div>
+  </div>
+
+  <!-- Absent Alerts -->
+  <div class="col-lg-7">
+    <div class="dash-card border-red">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-person-x-fill" style="color:var(--neon-red)"></i> Frequent Absentees <span class="badge-pill red" id="facAbsentBadge">0</span></div>
+        <select class="cyber-select" id="facAbsentSubject" style="width:150px;padding:5px 10px;font-size:12px" onchange="loadFacAbsentees()">
+          <option value="">All Subjects</option>
+          <option>Data Structures</option><option>DBMS</option>
+          <option>Operating Systems</option><option>Computer Networks</option>
+          <option>Software Engineering</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="cyber-table w-100">
+          <thead><tr><th>USN</th><th>Student</th><th>Subject</th><th>Absent Days</th><th>Status</th></tr></thead>
+          <tbody id="facAbsenteesTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 3: Post Circular + Circulars List -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="dash-card border-purple">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-megaphone-fill" style="color:var(--neon-purple)"></i> Post Circular</div>
+      </div>
+      <div class="mb-3">
+        <label class="cyber-label">Title</label>
+        <input class="cyber-input" id="facCircTitle" placeholder="Circular heading…"/>
+      </div>
+      <div class="mb-3">
+        <label class="cyber-label">Message</label>
+        <textarea class="cyber-textarea" id="facCircContent" rows="3" placeholder="Write the announcement…"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="cyber-label">Target Audience</label>
+        <select class="cyber-select" id="facCircTarget">
+          <option value="all">All</option>
+          <option value="students">Students Only</option>
+        </select>
+      </div>
+      <button class="btn-cyber primary w-100" onclick="submitFacCircular()"><i class="bi bi-send-fill"></i> Post</button>
+      <div id="facCircMsg" class="mt-2"></div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="dash-card border-purple">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-bell-fill" style="color:var(--neon-purple)"></i> All Circulars</div>
+      </div>
+      <div id="facCircularList" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 4: Student Suggestions + Available Rooms -->
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="dash-card border-blue">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-chat-square-text-fill" style="color:var(--neon-blue)"></i> Student Suggestions</div>
+      </div>
+      <div id="facSuggestionList" style="max-height:280px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="dash-card border-green">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-building-check" style="color:var(--neon-green)"></i> Available Rooms</div>
+        <a href="/" class="btn-cyber outline sm"><i class="bi bi-map"></i> Map</a>
+      </div>
+      <div id="facRoomList" style="max-height:280px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Circular modal (mobile fallback) -->
+<div id="facCircModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <span style="font-size:15px;font-weight:700;color:var(--neon-purple)"><i class="bi bi-megaphone-fill"></i> Post Circular</span>
+      <button onclick="closeCircularModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer">&times;</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+setInterval(()=>{ const e=document.getElementById('facClock'); if(e) e.textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); },1000);
+
+const STUDENTS = [
+  {usn:'1CS21001',name:'Rahul Sharma'},{usn:'1CS21002',name:'Priya Nair'},
+  {usn:'1CS21003',name:'Arun Kumar'},{usn:'1CS21004',name:'Sneha Patel'},
+  {usn:'1CS21005',name:'Kiran Reddy'},{usn:'1CS21006',name:'Deepa Singh'},
+];
+
+function renderFacAttList() {
+  document.getElementById('facAttStudentList').innerHTML = STUDENTS.map(s=>`
+    <div class="att-row">
+      <div class="att-info"><span class="att-usn">${s.usn}</span><span class="att-name">${s.name}</span></div>
+      <div class="att-toggle">
+        <button class="att-btn present active" id="fp_${s.usn}" onclick="setFacAtt('${s.usn}','present')">P</button>
+        <button class="att-btn absent"         id="fa_${s.usn}" onclick="setFacAtt('${s.usn}','absent')">A</button>
+      </div>
+    </div>`).join('');
+}
+function setFacAtt(usn,status){
+  document.getElementById('fp_'+usn).classList.toggle('active',status==='present');
+  document.getElementById('fa_'+usn).classList.toggle('active',status==='absent');
+}
+async function submitFacAttendance(){
+  const subject=document.getElementById('facAttSubject').value;
+  const date=document.getElementById('facAttDate').value;
+  if(!date){alert('Select a date');return;}
+  const records=STUDENTS.map(s=>({
+    usn:s.usn,student_name:s.name,subject,class_date:date,
+    status:document.getElementById('fa_'+s.usn).classList.contains('active')?'absent':'present'
+  }));
+  const res=await fetch('/api/attendance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records})}).then(r=>r.json());
+  const msg=document.getElementById('facAttMsg');
+  if(res.ok){
+    msg.innerHTML=`<div class="cyber-alert success"><i class="bi bi-check-circle"></i> Saved for ${subject}</div>`;
+    setTimeout(()=>msg.innerHTML='',3000);
+    loadFacAbsentees(); loadFacKPIs();
+  }
+}
+
+async function loadFacAbsentees(){
+  const data=await fetch('/api/attendance/absent-alert').then(r=>r.json());
+  const sub=document.getElementById('facAbsentSubject').value;
+  const f=sub?data.filter(d=>d.subject===sub):data;
+  document.getElementById('facAbsent').textContent=f.length;
+  document.getElementById('facAbsentBadge').textContent=f.length;
+  document.getElementById('facAbsenteesTable').innerHTML=f.length
+    ?f.map(d=>`<tr>
+        <td><span style="font-family:monospace;color:var(--neon-blue);font-size:12px">${d.usn}</span></td>
+        <td style="font-weight:500">${d.student_name}</td>
+        <td style="font-size:12px;color:var(--text-secondary)">${d.subject}</td>
+        <td><span style="font-size:18px;font-weight:800;color:${d.absent_days>5?'var(--neon-red)':'var(--neon-yellow)'}">${d.absent_days}</span></td>
+        <td><span class="absent-badge ${d.absent_days>5?'critical':'warning'}">${d.absent_days>5?'⚠ Critical':'⚠ Warn'}</span></td>
+      </tr>`).join('')
+    :'<tr><td colspan="5" class="text-center py-3" style="color:var(--neon-green)"><i class="bi bi-check-circle"></i> All good</td></tr>';
+}
+
+async function loadFacKPIs(){
+  const [sum, rooms, res, sug] = await Promise.all([
+    fetch('/api/analytics/summary').then(r=>r.json()),
+    fetch('/api/campus/status').then(r=>r.json()),
+    fetch('/api/resources').then(r=>r.json()),
+    fetch('/api/suggestions').then(r=>r.json()),
+  ]);
+  document.getElementById('facAvail').textContent   = sum.rooms.available;
+  document.getElementById('facFreeRes').textContent = res.filter(r=>r.status==='available').length;
+  document.getElementById('facSuggestions').textContent = sug.filter(s=>s.status==='pending').length;
+
+  document.getElementById('facRoomList').innerHTML = rooms.rooms.filter(r=>r.status==='available').map(r=>`
+    <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04)">
+      <div class="d-flex gap-3 align-items-center">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--neon-green);box-shadow:0 0 6px var(--neon-green)"></div>
+        <div><div style="font-size:13px;font-weight:600">${r.name}</div><div style="font-size:11px;color:var(--text-muted)">${r.building} · cap ${r.capacity}</div></div>
+      </div>
+      <span class="status-badge available">Free</span>
+    </div>`).join('');
+}
+
+async function loadFacCirculars(){
+  const data=await fetch('/api/circulars').then(r=>r.json());
+  document.getElementById('facCircularList').innerHTML=data.length
+    ?data.map(c=>`
+      <div class="circular-item ${c.role}">
+        <div class="circ-header">
+          <span class="circ-role-badge ${c.role}">${c.role.toUpperCase()}</span>
+          <span class="circ-date">${fmtDate(c.created_at)}</span>
+        </div>
+        <div class="circ-title">${c.title}</div>
+        <div class="circ-body">${c.content}</div>
+        <div class="circ-meta">By ${c.posted_by}</div>
+      </div>`).join('')
+    :'<div class="text-center py-4 text-muted">No circulars yet</div>';
+}
+
+async function submitFacCircular(){
+  const title=document.getElementById('facCircTitle').value.trim();
+  const content=document.getElementById('facCircContent').value.trim();
+  const target=document.getElementById('facCircTarget').value;
+  if(!title||!content) return;
+  const res=await fetch('/api/circulars',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content,target})}).then(r=>r.json());
+  if(res.ok){
+    document.getElementById('facCircMsg').innerHTML=`<div class="cyber-alert success"><i class="bi bi-check-circle"></i> Circular posted!</div>`;
+    document.getElementById('facCircTitle').value='';
+    document.getElementById('facCircContent').value='';
+    setTimeout(()=>document.getElementById('facCircMsg').innerHTML='',3000);
+    loadFacCirculars();
+  }
+}
+
+async function loadFacSuggestions(){
+  const data=await fetch('/api/suggestions').then(r=>r.json());
+  document.getElementById('facSuggestionList').innerHTML=data.length
+    ?data.map(s=>`
+      <div class="suggestion-card ${s.status}">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="sug-subject">${s.subject}</span>
+          <span class="sug-status ${s.status}">${s.status}</span>
+        </div>
+        <div class="sug-msg">${s.message}</div>
+        <div class="sug-meta">
+          <span>${s.student_name} · ${fmtDate(s.created_at)}</span>
+          ${s.status==='pending'?`<button class="btn-cyber outline sm" style="padding:2px 8px;font-size:10px" onclick="reviewSug(${s.id})">Review</button>`:''}
+        </div>
+      </div>`).join('')
+    :'<div class="text-center py-4 text-muted">No suggestions yet</div>';
+}
+
+async function reviewSug(id){
+  await fetch('/api/suggestions/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'reviewed'})});
+  loadFacSuggestions(); loadFacKPIs();
+}
+
+function fmtDate(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function refreshFaculty(){
+  await Promise.all([loadFacKPIs(),loadFacAbsentees(),loadFacCirculars(),loadFacSuggestions()]);
+}
+
+document.getElementById('facAttDate').valueAsDate=new Date();
+renderFacAttList();
+refreshFaculty();
+setInterval(()=>{loadFacKPIs();loadFacAbsentees();},30000);
+</script>
+{% endblock %}

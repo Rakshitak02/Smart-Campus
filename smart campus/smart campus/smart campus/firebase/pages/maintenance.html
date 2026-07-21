@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Maintenance AI — Smart Campus</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="bg-fx" id="bgFx"></div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><div class="brand-icon"><i class="bi bi-cpu-fill"></i></div>
+    <div class="brand-text"><div class="brand-title">SmartCampus</div><div class="brand-sub">Digital Twin v3.0</div></div></div>
+  <div class="sidebar-status"><span class="pulse-dot"></span><span>Firebase Live</span>
+    <span class="ms-auto" style="font-size:10px;color:var(--muted)" id="sidebarClock"></span></div>
+  <ul class="sidebar-nav">
+    <li><a href="../index.html" class="nav-link"><i class="bi bi-map-fill"></i><span class="nav-label">Campus Twin</span></a></li>
+    <li><a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a></li>
+    <li><a href="issues.html" class="nav-link"><i class="bi bi-exclamation-triangle-fill"></i><span class="nav-label">Issue Engine</span><span class="nav-badge" id="openIssuesBadge">–</span></a></li>
+    <li><a href="maintenance.html" class="nav-link active"><i class="bi bi-tools"></i><span class="nav-label">Maintenance AI</span></a></li>
+    <li><a href="analytics.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i><span class="nav-label">Analytics</span></a></li>
+    <li><a href="resources.html" class="nav-link"><i class="bi bi-box-seam-fill"></i><span class="nav-label">Resources</span></a></li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="sf-item"><i class="bi bi-building" style="color:var(--blue)"></i><span class="sf-label" id="sfRooms">–</span></div>
+    <div class="sf-item"><i class="bi bi-exclamation-circle" style="color:var(--red)"></i><span class="sf-label" id="sfIssues">–</span></div>
+  </div>
+</nav>
+
+<div class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+    <div class="topbar-title"><i class="bi bi-tools me-2" style="color:var(--purple)"></i>Predictive Maintenance AI</div>
+    <div class="topbar-right">
+      <div class="live-pill"><span class="pulse-dot"></span>LIVE</div>
+      <div class="topbar-stat"><i class="bi bi-building"></i><span id="tbAvail">–</span></div>
+      <div class="topbar-stat" style="color:var(--yellow)"><i class="bi bi-exclamation-circle"></i><span id="tbIssues">–</span></div>
+      <button class="notif-btn"><i class="bi bi-bell-fill"></i><span class="notif-dot" id="notifBadge">0</span></button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- Stats -->
+    <div class="row g-3 mb-4" id="maintStats"></div>
+
+    <div class="row g-3">
+      <!-- Predictions table -->
+      <div class="col-lg-8">
+        <div class="glass-card glow-purple">
+          <div class="sec-header">
+            <div class="sec-title"><i class="bi bi-cpu-fill"></i>ML Failure Risk Predictions</div>
+            <select class="cyber-select" id="riskFilter" style="width:140px;padding:5px 10px;font-size:12px">
+              <option value="">All Risk Levels</option>
+              <option value="Critical">Critical</option>
+              <option value="Warning">Warning</option>
+              <option value="Healthy">Healthy</option>
+            </select>
+          </div>
+          <div class="table-responsive"><table class="cyber-table">
+            <thead><tr><th>Resource</th><th>Location</th><th>Health</th><th>Risk Score</th><th>Status</th><th>Days Left</th><th></th></tr></thead>
+            <tbody id="predTable"></tbody>
+          </table></div>
+        </div>
+
+        <!-- History timeline -->
+        <div class="glass-card mt-3">
+          <div class="sec-header">
+            <div class="sec-title"><i class="bi bi-clock-history" style="color:var(--purple)"></i>Maintenance History</div>
+          </div>
+          <div class="timeline" id="historyTimeline">
+            <div class="skeleton" style="height:60px;margin-bottom:10px"></div>
+            <div class="skeleton" style="height:60px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="col-lg-4">
+        <div class="glass-card mb-3">
+          <div class="sec-title mb-3"><i class="bi bi-bar-chart-fill"></i>Risk Distribution</div>
+          <div class="chart-wrap" style="max-height:200px"><canvas id="riskChart"></canvas></div>
+        </div>
+        <div class="glass-card">
+          <div class="sec-title mb-3"><i class="bi bi-wrench-adjustable"></i>Log Maintenance</div>
+          <form id="maintForm">
+            <div class="mb-3">
+              <label class="cyber-label">Resource</label>
+              <select class="cyber-select" id="mResource" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="cyber-label">Action</label>
+              <select class="cyber-select" id="mAction">
+                <option value="inspection">Inspection</option>
+                <option value="repair">Repair</option>
+                <option value="replacement">Replacement</option>
+                <option value="calibration">Calibration</option>
+                <option value="cleaning">Cleaning</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="cyber-label">Technician</label>
+              <input type="text" class="cyber-input" id="mTech" value="Tech-01"/>
+            </div>
+            <div class="mb-3">
+              <label class="cyber-label">Notes</label>
+              <textarea class="cyber-textarea" id="mNotes" rows="2" placeholder="Optional notes…"></textarea>
+            </div>
+            <button type="submit" class="btn-cyber success w-100">
+              <i class="bi bi-check-circle"></i>Log Maintenance
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script type="module">
+import { db, C, seedIfEmpty, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp }
+  from "../js/firebase-config.js";
+import { doughnutChart } from "../js/charts.js";
+import { showToast, startClock, initSidebar, statusBadge, progressBar, riskBar, timeAgo }
+  from "../js/app.js";
+import { predictFailureRisk } from "../js/ai-engine.js";
+
+(function(){ const c=document.getElementById("bgFx"); for(let i=0;i<28;i++){const p=document.createElement("div");p.className="particle";p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*12}s`;c.appendChild(p);}})();
+startClock("sidebarClock"); initSidebar();
+
+let resourcesData = [], logsData = [], riskChart = null, riskFilter = "";
+
+async function init() {
+  await seedIfEmpty();
+
+  onSnapshot(collection(db, C.RESOURCES), snap => {
+    resourcesData = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderStats(); renderTable(); renderRiskChart(); populateSelect();
+  });
+
+  onSnapshot(collection(db, C.MAINT_LOGS), snap => {
+    logsData = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+      .sort((a,b)=>(b.performedAt?.seconds||0)-(a.performedAt?.seconds||0));
+    renderHistory();
+  });
+
+  onSnapshot(collection(db, C.ISSUES), snap => {
+    const open = snap.docs.filter(d=>d.data().status==="open").length;
+    document.getElementById("openIssuesBadge").textContent = open;
+    document.getElementById("notifBadge").textContent = open;
+    document.getElementById("tbIssues").textContent = open;
+    document.getElementById("sfIssues").textContent = open+" issues";
+  });
+}
+
+function getPred(r) {
+  const days = r.lastMaintenance ? Math.floor((Date.now()-new Date(r.lastMaintenance))/86400000) : 90;
+  return predictFailureRisk(r.healthScore, days);
+}
+
+function renderStats() {
+  const preds = resourcesData.map(r=>getPred(r));
+  const crit = preds.filter(p=>p.label==="Critical").length;
+  const warn = preds.filter(p=>p.label==="Warning").length;
+  const ok   = preds.filter(p=>p.label==="Healthy").length;
+  document.getElementById("maintStats").innerHTML = `
+    <div class="col-4"><div class="stat-card red" style="padding:14px">
+      <div class="stat-icon red" style="width:40px;height:40px;font-size:18px"><i class="bi bi-exclamation-octagon-fill"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--red)">${crit}</div><div class="stat-label">Critical</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card yellow" style="padding:14px">
+      <div class="stat-icon yellow" style="width:40px;height:40px;font-size:18px"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--yellow)">${warn}</div><div class="stat-label">Warning</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card green" style="padding:14px">
+      <div class="stat-icon green" style="width:40px;height:40px;font-size:18px"><i class="bi bi-check-circle-fill"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--green)">${ok}</div><div class="stat-label">Healthy</div></div>
+    </div></div>`;
+}
+
+function renderTable() {
+  let data = resourcesData.map(r=>({ ...r, pred:getPred(r) }));
+  if (riskFilter) data = data.filter(r=>r.pred.label===riskFilter);
+  data.sort((a,b)=>b.pred.risk-a.pred.risk);
+  document.getElementById("predTable").innerHTML = data.map(r=>`
+    <tr>
+      <td><div style="font-weight:500">${r.name}</div><div style="font-size:11px;color:var(--muted)">${r.type.replace("_"," ")}</div></td>
+      <td style="color:var(--blue);font-size:12px">${r.location}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div class="risk-bar" style="width:55px"><div class="risk-fill ${r.healthScore>70?"healthy":r.healthScore>40?"warning":"critical"}" style="width:${r.healthScore}%"></div></div>
+          <span style="font-size:12px">${r.healthScore}%</span>
+        </div>
+      </td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div class="risk-bar" style="width:55px"><div class="risk-fill ${r.pred.label==="Healthy"?"healthy":r.pred.label==="Warning"?"warning":"critical"}" style="width:${r.pred.risk}%"></div></div>
+          <span style="font-size:13px;font-weight:700;color:${r.pred.label==="Critical"?"var(--red)":r.pred.label==="Warning"?"var(--yellow)":"var(--green)"}">${r.pred.risk}%</span>
+        </div>
+      </td>
+      <td><span class="status-badge ${r.pred.label==="Critical"?"fault":r.pred.label==="Warning"?"busy":"available"}">${r.pred.label}</span></td>
+      <td style="font-size:12px;color:${r.pred.daysToFailure<30?"var(--red)":r.pred.daysToFailure<90?"var(--yellow)":"var(--green)"}">${r.pred.daysToFailure}d</td>
+      <td><button class="btn-cyber outline sm" onclick="quickLog('${r.id}','${r.name}')"><i class="bi bi-wrench"></i></button></td>
+    </tr>`).join("");
+}
+
+function renderRiskChart() {
+  const b={Healthy:0,Warning:0,Critical:0};
+  resourcesData.forEach(r=>{ b[getPred(r).label]++; });
+  if (riskChart) riskChart.destroy();
+  riskChart = doughnutChart("riskChart",["Healthy","Warning","Critical"],[b.Healthy,b.Warning,b.Critical],["green","yellow","red"]);
+}
+
+function renderHistory() {
+  const c = document.getElementById("historyTimeline");
+  if (!logsData.length) { c.innerHTML = `<div style="font-size:13px;color:var(--muted);padding:12px 0">No maintenance history yet.</div>`; return; }
+  c.innerHTML = logsData.slice(0,15).map(l=>`
+    <div class="timeline-item ${l.action==="repair"||l.action==="replacement"?"repair":""}">
+      <div style="font-size:13px;font-weight:600">${l.resourceName||"Resource"}
+        <span class="priority-badge ${l.action==="repair"||l.action==="replacement"?"high":"low"} ms-2">${l.action}</span></div>
+      <div style="font-size:12px;color:var(--text2);margin:2px 0">
+        <i class="bi bi-geo-alt" style="color:var(--blue)"></i> ${l.location||"–"} ·
+        <i class="bi bi-person-fill" style="color:var(--purple)"></i> ${l.performedBy||"–"}
+      </div>
+      ${l.notes?`<div style="font-size:11px;color:var(--muted);font-style:italic">"${l.notes}"</div>`:""}
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">${timeAgo(l.performedAt)}</div>
+    </div>`).join("");
+}
+
+function populateSelect() {
+  document.getElementById("mResource").innerHTML = resourcesData.map(r=>`<option value="${r.id}">${r.name} (${r.location})</option>`).join("");
+}
+
+window.quickLog = function(id, name) {
+  document.getElementById("mResource").value = id;
+  document.getElementById("mNotes").value = `Quick maintenance for ${name}`;
+  document.getElementById("maintForm").scrollIntoView({ behavior:"smooth" });
+};
+
+document.getElementById("riskFilter").addEventListener("change", e => { riskFilter=e.target.value; renderTable(); });
+
+document.getElementById("maintForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = e.target.querySelector("button[type=submit]");
+  btn.disabled = true; btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Logging…`;
+
+  const resId = document.getElementById("mResource").value;
+  const res   = resourcesData.find(r=>r.id===resId);
+  const now   = new Date().toISOString();
+
+  await addDoc(collection(db, C.MAINT_LOGS), {
+    resourceId: resId, resourceName: res?.name||"", location: res?.location||"",
+    action: document.getElementById("mAction").value,
+    performedBy: document.getElementById("mTech").value,
+    notes: document.getElementById("mNotes").value,
+    performedAt: serverTimestamp(),
+    nextDue: new Date(Date.now()+90*86400000).toISOString(),
+  });
+
+  await updateDoc(doc(db, C.RESOURCES, resId), {
+    lastMaintenance: now,
+    healthScore: Math.min(100, (res?.healthScore||50) + 20),
+  });
+
+  btn.disabled = false; btn.innerHTML = `<i class="bi bi-check-circle"></i>Log Maintenance`;
+  e.target.reset(); document.getElementById("mTech").value = "Tech-01";
+  showToast("Maintenance logged. Health score updated.", "success");
+});
+
+init();
+</script>
+</body>
+</html>

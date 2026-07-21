@@ -1,0 +1,88 @@
+{
+  "buildings": [
+    {
+      "id": "A",
+      "name": "Engineering Block",
+      "x": 80, "y": 80, "w": 200, "h": 160,
+      "color": "#1a1a2e",
+      "rooms": [
+        {"id": "A101", "name": "Lab A101", "type": "lab", "x": 90, "y": 90, "w": 80, "h": 60, "status": "available", "capacity": 30, "equipment": ["projector", "PCs", "whiteboard"]},
+        {"id": "A102", "name": "Class A102", "type": "classroom", "x": 185, "y": 90, "w": 80, "h": 60, "status": "busy", "capacity": 40, "equipment": ["projector", "whiteboard"]},
+        {"id": "A103", "name": "Lab A103", "type": "lab", "x": 90, "y": 165, "w": 80, "h": 60, "status": "fault", "capacity": 25, "equipment": ["projector", "PCs"]},
+        {"id": "A104", "name": "Class A104", "type": "classroom", "x": 185, "y": 165, "w": 80, "h": 60, "status": "available", "capacity": 35, "equipment": ["projector"]}
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Science Block",
+      "x": 340, "y": 80, "w": 200, "h": 160,
+      "color": "#16213e",
+      "rooms": [
+        {"id": "B101", "name": "Lab B101", "type": "lab", "x": 350, "y": 90, "w": 80, "h": 60, "status": "available", "capacity": 28, "equipment": ["projector", "PCs", "microscopes"]},
+        {"id": "B102", "name": "Class B102", "type": "classroom", "x": 445, "y": 90, "w": 80, "h": 60, "status": "busy", "capacity": 45, "equipment": ["projector", "whiteboard"]},
+        {"id": "B103", "name": "Lab B103", "type": "lab", "x": 350, "y": 165, "w": 80, "h": 60, "status": "busy", "capacity": 20, "equipment": ["PCs", "3D printer"]},
+        {"id": "B104", "name": "Class B104", "type": "classroom", "x": 445, "y": 165, "w": 80, "h": 60, "status": "available", "capacity": 38, "equipment": ["projector"]}
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Admin Block",
+      "x": 600, "y": 80, "w": 160, "h": 160,
+      "color": "#0f3460",
+      "rooms": [
+        {"id": "C101", "name": "Server Room", "type": "server", "x": 610, "y": 90, "w": 65, "h": 60, "status": "available", "capacity": 5, "equipment": ["servers", "network"]},
+        {"id": "C102", "name": "Admin Office", "type": "office", "x": 685, "y": 90, "w": 65, "h": 60, "status": "busy", "capacity": 10, "equipment": ["PCs"]},
+        {"id": "C103", "name": "Conference", "type": "conference", "x": 610, "y": 165, "w": 140, "h": 60, "status": "available", "capacity": 20, "equipment": ["projector", "video conf"]}
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Library Block",
+      "x": 80, "y": 310, "w": 200, "h": 140,
+      "color": "#1a1a2e",
+      "rooms": [
+        {"id": "D101", "name": "Reading Hall", "type": "library", "x": 90, "y": 320, "w": 180, "h": 55, "status": "busy", "capacity": 80, "equipment": ["PCs", "WiFi"]},
+        {"id": "D102", "name": "Study Room", "type": "study", "x": 90, "y": 385, "w": 80, "h": 55, "status": "available", "capacity": 15, "equipment": ["whiteboard"]},
+        {"id": "D103", "name": "Media Lab", "type": "lab", "x": 185, "y": 385, "w": 85, "h": 55, "status": "fault", "capacity": 20, "equipment": ["PCs", "projector"]}
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Sports Complex",
+      "x": 340, "y": 310, "w": 200, "h": 140,
+      "color": "#16213e",
+      "rooms": [
+        {"id": "E101", "name": "Gymnasium", "type": "sports", "x": 350, "y": 320, "w": 180, "h": 55, "status": "available", "capacity": 100, "equipment": ["scoreboard"]},
+        {"id": "E102", "name": "Fitness Center", "type": "sports", "x": 350, "y": 385, "w": 85, "h": 55, "status": "busy", "capacity": 30, "equipment": ["equipment"]},
+        {"id": "E103", "name": "Pool Area", "type": "sports", "x": 445, "y": 385, "w": 85, "h": 55, "status": "available", "capacity": 40, "equipment": ["WiFi"]}
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Cafeteria",
+      "x": 600, "y": 310, "w": 160, "h": 140,
+      "color": "#0f3460",
+      "rooms": [
+        {"id": "F101", "name": "Main Dining", "type": "cafeteria", "x": 610, "y": 320, "w": 140, "h": 55, "status": "busy", "capacity": 150, "equipment": ["WiFi", "TV"]},
+        {"id": "F102", "name": "Staff Lounge", "type": "lounge", "x": 610, "y": 385, "w": 140, "h": 55, "status": "available", "capacity": 25, "equipment": ["WiFi", "TV"]}
+      ]
+    }
+  ],
+  "wifi_nodes": [
+    {"id": "W1", "x": 180, "y": 160, "signal": 95, "connected": 23},
+    {"id": "W2", "x": 440, "y": 160, "signal": 88, "connected": 31},
+    {"id": "W3", "x": 680, "y": 160, "signal": 72, "connected": 18},
+    {"id": "W4", "x": 180, "y": 380, "signal": 91, "connected": 45},
+    {"id": "W5", "x": 440, "y": 380, "signal": 85, "connected": 28},
+    {"id": "W6", "x": 680, "y": 380, "signal": 79, "connected": 12}
+  ],
+  "pathways": [
+    {"from": [280, 160], "to": [340, 160]},
+    {"from": [540, 160], "to": [600, 160]},
+    {"from": [180, 240], "to": [180, 310]},
+    {"from": [440, 240], "to": [440, 310]},
+    {"from": [680, 240], "to": [680, 310]},
+    {"from": [280, 380], "to": [340, 380]},
+    {"from": [540, 380], "to": [600, 380]}
+  ]
+}

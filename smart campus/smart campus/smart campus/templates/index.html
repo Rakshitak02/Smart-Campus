@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Campus Digital Twin{% endblock %}
+{% block page_title %}<i class="bi bi-map-fill me-2" style="color:var(--neon-blue)"></i>Interactive Campus Digital Twin{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="stat-card green">
+      <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+      <div><div class="stat-value text-success" id="statAvail">–</div><div class="stat-label">Available</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card yellow">
+      <div class="stat-icon yellow"><i class="bi bi-clock-fill"></i></div>
+      <div><div class="stat-value" style="color:var(--neon-yellow)" id="statBusy">–</div><div class="stat-label">Busy</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card red">
+      <div class="stat-icon red"><i class="bi bi-x-circle-fill"></i></div>
+      <div><div class="stat-value text-danger" id="statFault">–</div><div class="stat-label">Fault</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card blue">
+      <div class="stat-icon blue"><i class="bi bi-building"></i></div>
+      <div><div class="stat-value" style="color:var(--neon-blue)" id="statTotal">–</div><div class="stat-label">Total Rooms</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Campus Map -->
+  <div class="col-lg-8">
+    <div class="glass-card glow-blue" style="padding:16px">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-map"></i> Live Campus Map</div>
+        <div class="d-flex gap-2 align-items-center">
+          <div class="map-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#00ff88"></div>Available</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ffcc00"></div>Busy</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ff3366"></div>Fault</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#00d4ff;border-radius:2px"></div>WiFi</div>
+          </div>
+          <button class="btn-cyber outline sm" onclick="refreshMap()"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+      </div>
+      <div style="overflow:auto">
+        <canvas id="campusCanvas" width="820" height="520"></canvas>
+      </div>
+      <div class="mt-2" style="font-size:11px;color:var(--text-muted)">
+        <i class="bi bi-cursor"></i> Click any room to view details &nbsp;|&nbsp;
+        <i class="bi bi-wifi"></i> WiFi nodes show signal strength
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel: room list + quick stats -->
+  <div class="col-lg-4">
+    <div class="glass-card mb-3" style="padding:16px">
+      <div class="section-title mb-3"><i class="bi bi-list-ul"></i> Room Status</div>
+      <div id="roomListContainer" style="max-height:240px;overflow-y:auto">
+        <div class="text-center text-muted py-3"><i class="bi bi-arrow-repeat spin"></i> Loading…</div>
+      </div>
+    </div>
+    <div class="glass-card" style="padding:16px">
+      <div class="section-title mb-3"><i class="bi bi-wifi"></i> WiFi Nodes</div>
+      <div id="wifiStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Detail Side Panel -->
+<div id="roomPanel">
+  <button class="panel-close" onclick="closePanel()"><i class="bi bi-x-lg"></i></button>
+  <div id="roomPanelContent"><div class="text-muted text-center py-5">Select a room</div></div>
+</div>
+<div id="panelOverlay" onclick="closePanel()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:499"></div>
+<div id="mapTooltip"></div>
+<div id="toastContainer"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/campus_map.js') }}"></script>
+{% endblock %}

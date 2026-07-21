@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard — Smart Campus</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="bg-fx" id="bgFx"></div>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="bi bi-cpu-fill"></i></div>
+    <div class="brand-text"><div class="brand-title">SmartCampus</div><div class="brand-sub">Digital Twin v3.0</div></div>
+  </div>
+  <div class="sidebar-status"><span class="pulse-dot"></span><span>Firebase Live</span>
+    <span class="ms-auto" style="font-size:10px;color:var(--muted)" id="sidebarClock"></span></div>
+  <ul class="sidebar-nav">
+    <li><a href="../index.html" class="nav-link"><i class="bi bi-map-fill"></i><span class="nav-label">Campus Twin</span></a></li>
+    <li><a href="dashboard.html" class="nav-link active"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a></li>
+    <li><a href="issues.html" class="nav-link"><i class="bi bi-exclamation-triangle-fill"></i><span class="nav-label">Issue Engine</span><span class="nav-badge" id="openIssuesBadge">–</span></a></li>
+    <li><a href="maintenance.html" class="nav-link"><i class="bi bi-tools"></i><span class="nav-label">Maintenance AI</span></a></li>
+    <li><a href="analytics.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i><span class="nav-label">Analytics</span></a></li>
+    <li><a href="resources.html" class="nav-link"><i class="bi bi-box-seam-fill"></i><span class="nav-label">Resources</span></a></li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="sf-item"><i class="bi bi-building" style="color:var(--blue)"></i><span class="sf-label" id="sfRooms">–</span></div>
+    <div class="sf-item"><i class="bi bi-exclamation-circle" style="color:var(--red)"></i><span class="sf-label" id="sfIssues">–</span></div>
+  </div>
+</nav>
+
+<div class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+    <div class="topbar-title"><i class="bi bi-speedometer2 me-2" style="color:var(--blue)"></i>Admin Dashboard</div>
+    <div class="topbar-right">
+      <div class="live-pill"><span class="pulse-dot"></span>LIVE</div>
+      <div class="topbar-stat"><i class="bi bi-building"></i><span id="tbAvail">–</span></div>
+      <div class="topbar-stat" style="color:var(--yellow)"><i class="bi bi-exclamation-circle"></i><span id="tbIssues">–</span></div>
+      <div class="topbar-stat" style="color:var(--red)"><i class="bi bi-x-circle"></i><span id="tbFaults">–</span></div>
+      <button class="notif-btn"><i class="bi bi-bell-fill"></i><span class="notif-dot" id="notifBadge">0</span></button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- KPIs -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3"><div class="stat-card blue">
+        <div class="stat-icon blue"><i class="bi bi-building"></i></div>
+        <div><div class="stat-value" style="color:var(--blue)" id="kpiRooms">–</div>
+        <div class="stat-label">Total Rooms</div><div class="stat-sub" id="kpiAvailPct">–</div></div>
+      </div></div>
+      <div class="col-6 col-md-3"><div class="stat-card green">
+        <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-value" style="color:var(--green)" id="kpiOcc">–</div>
+        <div class="stat-label">Avg Occupancy</div><div class="stat-sub">campus-wide</div></div>
+      </div></div>
+      <div class="col-6 col-md-3"><div class="stat-card yellow">
+        <div class="stat-icon yellow"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div><div class="stat-value" style="color:var(--yellow)" id="kpiOpenIssues">–</div>
+        <div class="stat-label">Open Issues</div><div class="stat-sub" id="kpiIssueSub">–</div></div>
+      </div></div>
+      <div class="col-6 col-md-3"><div class="stat-card red">
+        <div class="stat-icon red"><i class="bi bi-tools"></i></div>
+        <div><div class="stat-value" style="color:var(--red)" id="kpiFaulty">–</div>
+        <div class="stat-label">Faulty Resources</div><div class="stat-sub">need attention</div></div>
+      </div></div>
+    </div>
+
+    <!-- Charts row 1 -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-8">
+        <div class="glass-card glow-blue">
+          <div class="sec-header"><div class="sec-title"><i class="bi bi-graph-up"></i>Occupancy by Room</div></div>
+          <div class="chart-wrap"><canvas id="occChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card glow-purple">
+          <div class="sec-header"><div class="sec-title"><i class="bi bi-pie-chart-fill"></i>Room Status</div></div>
+          <div class="chart-wrap" style="max-height:200px"><canvas id="statusChart"></canvas></div>
+          <div id="statusLegend" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts row 2 -->
+    <div class="row g-3 mb-3">
+      <div class="col-lg-4">
+        <div class="glass-card">
+          <div class="sec-header"><div class="sec-title"><i class="bi bi-bar-chart-fill"></i>Issues by Category</div></div>
+          <div class="chart-wrap"><canvas id="issueCatChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card">
+          <div class="sec-header"><div class="sec-title"><i class="bi bi-activity"></i>Resource Health</div></div>
+          <div class="chart-wrap"><canvas id="healthChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card">
+          <div class="sec-header"><div class="sec-title"><i class="bi bi-building-fill"></i>Occupancy by Building</div></div>
+          <div class="chart-wrap"><canvas id="buildingChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="glass-card">
+          <div class="sec-header">
+            <div class="sec-title"><i class="bi bi-exclamation-circle-fill" style="color:var(--yellow)"></i>Recent Issues</div>
+            <a href="issues.html" class="btn-cyber outline sm">View All</a>
+          </div>
+          <table class="cyber-table"><thead><tr><th>Issue</th><th>Loc</th><th>Pri</th><th>Status</th></tr></thead>
+          <tbody id="recentIssues"></tbody></table>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card">
+          <div class="sec-header">
+            <div class="sec-title"><i class="bi bi-tools" style="color:var(--red)"></i>Maintenance Alerts</div>
+            <a href="maintenance.html" class="btn-cyber outline sm">View All</a>
+          </div>
+          <div id="maintAlerts"></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card">
+          <div class="sec-header">
+            <div class="sec-title"><i class="bi bi-activity" style="color:var(--green)"></i>Live Activity Feed</div>
+          </div>
+          <div id="liveFeed" style="max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script type="module">
+import { db, C, seedIfEmpty, collection, onSnapshot, query, orderBy, limit }
+  from "../js/firebase-config.js";
+import { areaChart, barChart, doughnutChart, polarChart, PALETTE }
+  from "../js/charts.js";
+import { showToast, startClock, initSidebar, animateCount, timeAgo,
+         statusBadge, priorityBadge, progressBar }
+  from "../js/app.js";
+import { predictFailureRisk } from "../js/ai-engine.js";
+
+(function(){ const c=document.getElementById("bgFx"); for(let i=0;i<28;i++){const p=document.createElement("div");p.className="particle";p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*12}s`;c.appendChild(p);}})();
+startClock("sidebarClock"); initSidebar();
+
+let charts = {};
+let roomsData = [], issuesData = [], resourcesData = [];
+
+async function init() {
+  await seedIfEmpty();
+
+  onSnapshot(collection(db, C.ROOMS), snap => {
+    roomsData = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    updateKPIs(); renderOccChart(); renderStatusChart(); renderBuildingChart();
+  });
+
+  onSnapshot(collection(db, C.ISSUES), snap => {
+    issuesData = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    updateKPIs(); renderIssueCatChart(); renderRecentIssues(); renderFeed();
+    const open = issuesData.filter(i=>i.status==="open").length;
+    document.getElementById("openIssuesBadge").textContent = open;
+    document.getElementById("notifBadge").textContent = open;
+  });
+
+  onSnapshot(collection(db, C.RESOURCES), snap => {
+    resourcesData = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    updateKPIs(); renderHealthChart(); renderMaintAlerts();
+  });
+}
+
+function updateKPIs() {
+  const avail  = roomsData.filter(r=>r.status==="available").length;
+  const fault  = roomsData.filter(r=>r.status==="fault").length;
+  const open   = issuesData.filter(i=>i.status==="open").length;
+  const total  = issuesData.length;
+  const resolved = issuesData.filter(i=>i.status==="resolved").length;
+  const faulty = resourcesData.filter(r=>r.healthScore<50).length;
+  const avgOcc = roomsData.length ? Math.round(roomsData.reduce((s,r)=>s+(r.capacity>0?r.occupancy/r.capacity*100:0),0)/roomsData.length) : 0;
+
+  animateCount(document.getElementById("kpiRooms"), roomsData.length);
+  animateCount(document.getElementById("kpiOcc"), avgOcc, "%");
+  animateCount(document.getElementById("kpiOpenIssues"), open);
+  animateCount(document.getElementById("kpiFaulty"), faulty);
+  document.getElementById("kpiAvailPct").textContent = Math.round(avail/roomsData.length*100||0)+"% available";
+  document.getElementById("kpiIssueSub").textContent = total+" total · "+resolved+" resolved";
+  document.getElementById("tbAvail").textContent  = avail;
+  document.getElementById("tbIssues").textContent = open;
+  document.getElementById("tbFaults").textContent = fault;
+  document.getElementById("sfRooms").textContent  = roomsData.length+" rooms";
+  document.getElementById("sfIssues").textContent = open+" issues";
+}
+
+function renderOccChart() {
+  if (charts.occ) { charts.occ.destroy(); }
+  const labels = roomsData.map(r=>r.id);
+  const pcts   = roomsData.map(r=>r.capacity>0?Math.round(r.occupancy/r.capacity*100):0);
+  charts.occ = barChart("occChart", labels, [{
+    label:"Occupancy %", data:pcts,
+    colors: pcts.map(v=>v>80?"rgba(255,51,102,0.75)":v>50?"rgba(255,204,0,0.75)":"rgba(0,255,136,0.75)"),
+    borders:pcts.map(v=>v>80?"#ff3366":v>50?"#ffcc00":"#00ff88"),
+  }], { yMax:100, pct:true });
+}
+
+function renderStatusChart() {
+  if (charts.status) charts.status.destroy();
+  const avail = roomsData.filter(r=>r.status==="available").length;
+  const busy  = roomsData.filter(r=>r.status==="busy").length;
+  const fault = roomsData.filter(r=>r.status==="fault").length;
+  charts.status = doughnutChart("statusChart",["Available","Busy","Fault"],[avail,busy,fault],["green","yellow","red"]);
+  document.getElementById("statusLegend").innerHTML = `
+    <div class="d-flex justify-content-around">
+      <div class="text-center"><div style="font-size:20px;font-weight:700;color:var(--green)">${avail}</div><div style="font-size:11px;color:var(--muted)">Available</div></div>
+      <div class="text-center"><div style="font-size:20px;font-weight:700;color:var(--yellow)">${busy}</div><div style="font-size:11px;color:var(--muted)">Busy</div></div>
+      <div class="text-center"><div style="font-size:20px;font-weight:700;color:var(--red)">${fault}</div><div style="font-size:11px;color:var(--muted)">Fault</div></div>
+    </div>`;
+}
+
+function renderIssueCatChart() {
+  if (charts.cat) charts.cat.destroy();
+  const cats = {}; issuesData.forEach(i=>{ cats[i.category]=(cats[i.category]||0)+1; });
+  const labels=Object.keys(cats), vals=Object.values(cats);
+  const pal=["blue","purple","green","yellow","red","orange"];
+  charts.cat = barChart("issueCatChart", labels, [{
+    label:"Issues", data:vals,
+    colors: pal.slice(0,labels.length).map(c=>PALETTE[c]?.solid),
+    borders:pal.slice(0,labels.length).map(c=>PALETTE[c]?.line),
+  }], { horizontal:true });
+}
+
+function renderHealthChart() {
+  if (charts.health) charts.health.destroy();
+  const b={Healthy:0,Warning:0,Critical:0};
+  resourcesData.forEach(r=>{
+    const days = r.lastMaintenance ? Math.floor((Date.now()-new Date(r.lastMaintenance))/86400000) : 90;
+    const p = predictFailureRisk(r.healthScore, days);
+    b[p.label]++;
+  });
+  charts.health = polarChart("healthChart",["Healthy","Warning","Critical"],[b.Healthy,b.Warning,b.Critical],["green","yellow","red"]);
+}
+
+function renderBuildingChart() {
+  if (charts.bld) charts.bld.destroy();
+  const blds={};
+  roomsData.forEach(r=>{ if(!blds[r.building]) blds[r.building]={t:0,c:0}; blds[r.building].t+=r.occupancy; blds[r.building].c+=r.capacity; });
+  const labels=Object.keys(blds), vals=labels.map(b=>blds[b].c>0?Math.round(blds[b].t/blds[b].c*100):0);
+  charts.bld = barChart("buildingChart", labels, [{
+    label:"Occupancy %", data:vals,
+    colors: vals.map(v=>v>80?"rgba(255,51,102,0.75)":v>50?"rgba(255,204,0,0.75)":"rgba(0,255,136,0.75)"),
+    borders:vals.map(v=>v>80?"#ff3366":v>50?"#ffcc00":"#00ff88"),
+  }], { yMax:100, pct:true });
+}
+
+function renderRecentIssues() {
+  document.getElementById("recentIssues").innerHTML = issuesData.slice(0,6).map(i=>`
+    <tr>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${i.title}">${i.title}</td>
+      <td style="color:var(--blue);font-size:11px">${i.location}</td>
+      <td>${priorityBadge(i.priority)}</td>
+      <td>${statusBadge(i.status)}</td>
+    </tr>`).join("");
+}
+
+function renderMaintAlerts() {
+  const alerts = resourcesData.map(r=>{
+    const days = r.lastMaintenance ? Math.floor((Date.now()-new Date(r.lastMaintenance))/86400000) : 90;
+    return { ...r, pred: predictFailureRisk(r.healthScore, days) };
+  }).filter(r=>r.pred.label!=="Healthy").sort((a,b)=>b.pred.risk-a.pred.risk).slice(0,5);
+
+  document.getElementById("maintAlerts").innerHTML = alerts.length
+    ? alerts.map(r=>`
+      <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div>
+          <div style="font-size:13px;font-weight:500">${r.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.location}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:700;color:${r.pred.label==="Critical"?"var(--red)":"var(--yellow)"}">${r.pred.risk}%</div>
+          <div style="font-size:10px;color:var(--muted)">${r.pred.label}</div>
+        </div>
+      </div>`).join("")
+    : `<div class="cyber-alert success"><i class="bi bi-check-circle"></i> All systems healthy</div>`;
+}
+
+function renderFeed() {
+  const typeMap = {
+    open:        { dot:"issue",  icon:"bi-exclamation-circle-fill", color:"var(--red)" },
+    in_progress: { dot:"status", icon:"bi-gear-fill",               color:"var(--blue)" },
+    resolved:    { dot:"ok",     icon:"bi-check-circle-fill",       color:"var(--green)" },
+  };
+  const events = issuesData.slice(0,10).map(i=>{
+    const t = typeMap[i.status] || typeMap.open;
+    return `<div class="feed-item">
+      <div class="feed-dot ${t.dot}"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          <i class="bi ${t.icon}" style="color:${t.color};margin-right:4px"></i>${i.title}</div>
+        <div style="font-size:10px;color:var(--muted)">${i.location} · ${i.status.replace("_"," ")}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById("liveFeed").innerHTML = events.join("");
+}
+
+init();
+</script>
+</body>
+</html>

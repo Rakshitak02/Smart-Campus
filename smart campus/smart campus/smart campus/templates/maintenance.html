@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Predictive Maintenance{% endblock %}
+{% block page_title %}<i class="bi bi-tools me-2" style="color:var(--neon-purple)"></i>Predictive Maintenance AI{% endblock %}
+
+{% block content %}
+<!-- Summary cards -->
+<div class="row g-3 mb-4" id="maintStats"></div>
+
+<div class="row g-3">
+  <!-- Predictions table -->
+  <div class="col-lg-8">
+    <div class="glass-card glow-purple">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-cpu-fill"></i> ML Failure Risk Predictions</div>
+        <div class="d-flex gap-2">
+          <select class="cyber-select" id="riskFilter" style="width:130px;padding:5px 10px;font-size:12px">
+            <option value="">All Risk Levels</option>
+            <option value="Critical">Critical</option>
+            <option value="Warning">Warning</option>
+            <option value="Healthy">Healthy</option>
+          </select>
+          <button class="btn-cyber outline sm" onclick="loadPredictions()"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+      </div>
+      <div id="predictionsContainer"></div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="col-lg-4">
+    <div class="glass-card mb-3">
+      <div class="section-title mb-3"><i class="bi bi-bar-chart-fill"></i> Risk Distribution</div>
+      <div class="chart-wrap" style="max-height:200px"><canvas id="riskDistChart"></canvas></div>
+    </div>
+    <div class="glass-card">
+      <div class="section-title mb-3"><i class="bi bi-wrench-adjustable"></i> Log Maintenance</div>
+      <form id="maintForm">
+        <div class="mb-3">
+          <label class="cyber-label">Resource</label>
+          <select class="cyber-select" id="maintResource" required></select>
+        </div>
+        <div class="mb-3">
+          <label class="cyber-label">Action</label>
+          <select class="cyber-select" id="maintAction">
+            <option value="inspection">Inspection</option>
+            <option value="repair">Repair</option>
+            <option value="replacement">Replacement</option>
+            <option value="calibration">Calibration</option>
+            <option value="cleaning">Cleaning</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="cyber-label">Technician</label>
+          <input type="text" class="cyber-input" id="maintTech" placeholder="Tech name" value="Tech-01">
+        </div>
+        <div class="mb-3">
+          <label class="cyber-label">Notes</label>
+          <textarea class="cyber-textarea" id="maintNotes" rows="2" placeholder="Optional notes…"></textarea>
+        </div>
+        <button type="submit" class="btn-cyber success w-100">
+          <i class="bi bi-check-circle"></i> Log Maintenance
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance History -->
+<div class="row g-3 mt-0">
+  <div class="col-12">
+    <div class="glass-card">
+      <div class="section-header">
+        <div class="section-title"><i class="bi bi-clock-history" style="color:var(--neon-purple)"></i> Maintenance History</div>
+        <button class="btn-cyber outline sm" onclick="loadHistory()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+      </div>
+      <div id="historyTimeline" class="timeline"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+let allPredictions = [];
+let riskChart = null;
+
+async function loadPredictions() {
+  const r = await fetch('/api/maintenance/predictions');
+  allPredictions = await r.json();
+  renderStats();
+  renderPredictions();
+  renderRiskChart();
+  populateResourceSelect();
+}
+
+function renderStats() {
+  const critical = allPredictions.filter(d => d.label === 'Critical').length;
+  const warning = allPredictions.filter(d => d.label === 'Warning').length;
+  const healthy = allPredictions.filter(d => d.label === 'Healthy').length;
+  document.getElementById('maintStats').innerHTML = `
+    <div class="col-4"><div class="stat-card red" style="padding:14px">
+      <div class="stat-icon red" style="width:40px;height:40px;font-size:18px"><i class="bi bi-exclamation-octagon-fill"></i></div>
+      <div><div class="stat-value text-danger" style="font-size:24px">${critical}</div><div class="stat-label">Critical</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card yellow" style="padding:14px">
+      <div class="stat-icon yellow" style="width:40px;height:40px;font-size:18px"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--neon-yellow)">${warning}</div><div class="stat-label">Warning</div></div>
+    </div></div>
+    <div class="col-4"><div class="stat-card green" style="padding:14px">
+      <div class="stat-icon green" style="width:40px;height:40px;font-size:18px"><i class="bi bi-check-circle-fill"></i></div>
+      <div><div class="stat-value text-success" style="font-size:24px">${healthy}</div><div class="stat-label">Healthy</div></div>
+    </div></div>`;
+}
+
+function renderPredictions() {
+  const filter = document.getElementById('riskFilter').value;
+  let data = allPredictions;
+  if (filter) data = data.filter(d => d.label === filter);
+
+  const c = document.getElementById('predictionsContainer');
+  c.innerHTML = `
+    <table class="cyber-table">
+      <thead><tr>
+        <th>Resource</th><th>Location</th><th>Health</th>
+        <th>Risk Score</th><th>Status</th><th>Days to Failure</th><th>Action</th>
+      </tr></thead>
+      <tbody>
+        ${data.map(d => `
+          <tr>
+            <td>
+              <div style="font-weight:500">${d.name}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${d.type}</div>
+            </td>
+            <td><span style="color:var(--neon-blue);font-size:12px">${d.location}</span></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="risk-bar" style="width:60px">
+                  <div class="risk-fill ${d.health_score>70?'healthy':d.health_score>40?'warning':'critical'}"
+                       style="width:${d.health_score}%"></div>
+                </div>
+                <span style="font-size:12px">${d.health_score}%</span>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="risk-bar" style="width:60px">
+                  <div class="risk-fill ${d.label==='Healthy'?'healthy':d.label==='Warning'?'warning':'critical'}"
+                       style="width:${d.risk}%"></div>
+                </div>
+                <span style="font-size:13px;font-weight:700;color:${d.label==='Critical'?'var(--neon-red)':d.label==='Warning'?'var(--neon-yellow)':'var(--neon-green)'}">${d.risk}%</span>
+              </div>
+            </td>
+            <td><span class="status-badge ${d.label==='Critical'?'fault':d.label==='Warning'?'busy':'available'}">${d.label}</span></td>
+            <td style="font-size:12px;color:${d.days_to_failure<30?'var(--neon-red)':d.days_to_failure<90?'var(--neon-yellow)':'var(--neon-green)'}">${d.days_to_failure}d</td>
+            <td>
+              <button class="btn-cyber outline sm" onclick="quickMaintenance(${d.id},'${d.name}')">
+                <i class="bi bi-wrench"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderRiskChart() {
+  const buckets = { Healthy: 0, Warning: 0, Critical: 0 };
+  allPredictions.forEach(d => buckets[d.label]++);
+  const ctx = document.getElementById('riskDistChart').getContext('2d');
+  if (riskChart) riskChart.destroy();
+  riskChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Healthy', 'Warning', 'Critical'],
+      datasets: [{
+        data: [buckets.Healthy, buckets.Warning, buckets.Critical],
+        backgroundColor: ['rgba(0,255,136,0.7)', 'rgba(255,204,0,0.7)', 'rgba(255,51,102,0.7)'],
+        borderColor: ['#00ff88', '#ffcc00', '#ff3366'],
+        borderWidth: 2, hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true, cutout: '60%',
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8, font: { size: 11 } } } }
+    }
+  });
+}
+
+function populateResourceSelect() {
+  const sel = document.getElementById('maintResource');
+  sel.innerHTML = allPredictions.map(d => `<option value="${d.id}">${d.name} (${d.location})</option>`).join('');
+}
+
+function quickMaintenance(id, name) {
+  document.getElementById('maintResource').value = id;
+  document.getElementById('maintNotes').value = `Quick maintenance for ${name}`;
+  document.getElementById('maintForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+document.getElementById('riskFilter').addEventListener('change', renderPredictions);
+
+document.getElementById('maintForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Logging…';
+
+  await fetch('/api/maintenance/log', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      resource_id: parseInt(document.getElementById('maintResource').value),
+      action: document.getElementById('maintAction').value,
+      performed_by: document.getElementById('maintTech').value,
+      notes: document.getElementById('maintNotes').value,
+    })
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-check-circle"></i> Log Maintenance';
+  e.target.reset();
+  document.getElementById('maintTech').value = 'Tech-01';
+  await loadPredictions();
+  showToast('Maintenance logged. Health score updated.', 'success');
+});
+
+function showToast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast-msg ${type}`;
+  t.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+async function loadHistory() {
+  const data = await fetch('/api/maintenance/history').then(r => r.json());
+  const c = document.getElementById('historyTimeline');
+  if (!data.length) {
+    c.innerHTML = '<div class="text-muted" style="font-size:13px;padding:12px 0">No maintenance history yet.</div>';
+    return;
+  }
+  const actionClass = { repair: 'repair', replacement: 'repair', inspection: '', calibration: '', cleaning: '' };
+  c.innerHTML = data.map(d => `
+    <div class="timeline-item ${actionClass[d.action]||''}">
+      <div style="font-size:13px;font-weight:600">${d.resource_name}
+        <span class="priority-badge ${d.action==='repair'||d.action==='replacement'?'high':'low'} ms-2">${d.action}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);margin:2px 0">
+        <i class="bi bi-geo-alt" style="color:var(--neon-blue)"></i> ${d.location} ·
+        <i class="bi bi-person-fill" style="color:var(--neon-purple)"></i> ${d.performed_by}
+      </div>
+      ${d.notes ? `<div style="font-size:11px;color:var(--text-muted);font-style:italic">"${d.notes}"</div>` : ''}
+      <div style="font-size:10px;color:var(--text-muted);margin-top:3px">
+        ${new Date(d.performed_at).toLocaleString()} ·
+        Next due: <span style="color:var(--neon-yellow)">${new Date(d.next_due).toLocaleDateString()}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+loadPredictions();
+loadHistory();
+</script>
+{% endblock %}

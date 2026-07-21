@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% block title %}HOD Dashboard{% endblock %}
+{% block page_title %}<i class="bi bi-person-badge-fill me-2" style="color:var(--neon-purple)"></i>HOD Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Welcome + Quick actions -->
+<div class="hod-welcome mb-4">
+  <div class="welcome-left">
+    <div class="welcome-avatar hod"><i class="bi bi-person-badge-fill"></i></div>
+    <div>
+      <div class="welcome-name">Prof. HOD &nbsp;<span class="role-badge hod"><i class="bi bi-shield-fill-check"></i> Head of Department</span></div>
+      <div class="welcome-sub">Full academic & campus oversight · <span id="hodClock" style="color:var(--neon-purple)"></span></div>
+    </div>
+  </div>
+  <div class="welcome-actions">
+    <button class="btn-cyber outline sm" onclick="location.href='/analytics'"><i class="bi bi-graph-up-arrow"></i> Analytics</button>
+    <button class="btn-cyber primary sm" onclick="openCircularModal()"><i class="bi bi-megaphone-fill"></i> Post Circular</button>
+    <button class="btn-cyber outline sm" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i></button>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card purple">
+      <div class="kpi-icon"><i class="bi bi-building"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="hodRooms">–</div>
+        <div class="kpi-label">Total Rooms</div>
+        <div class="kpi-sub" id="hodAvailPct"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card yellow">
+      <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="hodOcc">–</div>
+        <div class="kpi-label">Avg Occupancy</div>
+        <div class="kpi-sub">campus average</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card red">
+      <div class="kpi-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="hodIssues">–</div>
+        <div class="kpi-label">Open Issues</div>
+        <div class="kpi-sub" id="hodIssuesSub"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card orange">
+      <div class="kpi-icon"><i class="bi bi-person-x-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="hodAbsent">–</div>
+        <div class="kpi-label">Absent Alerts</div>
+        <div class="kpi-sub">students &gt;2 days absent</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 2: Attendance Alerts + Circular Panel -->
+<div class="row g-3 mb-4">
+
+  <!-- Absent Students Alert Table -->
+  <div class="col-lg-7">
+    <div class="dash-card border-red">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-person-x-fill" style="color:var(--neon-red)"></i> Frequent Absentees <span class="badge-pill red" id="absentBadge">0</span></div>
+        <div class="d-flex gap-2">
+          <select class="cyber-select" id="hodAbsentSubject" style="width:160px;padding:5px 10px;font-size:12px" onchange="loadAbsentees()">
+            <option value="">All Subjects</option>
+            <option>Data Structures</option>
+            <option>DBMS</option>
+            <option>Operating Systems</option>
+            <option>Computer Networks</option>
+            <option>Software Engineering</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="cyber-table w-100">
+          <thead><tr>
+            <th>USN</th><th>Student</th><th>Subject</th><th>Absent Days</th><th>Alert</th>
+          </tr></thead>
+          <tbody id="hodAbsenteesTable"><tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Circulars Panel -->
+  <div class="col-lg-5">
+    <div class="dash-card border-purple">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-megaphone-fill" style="color:var(--neon-purple)"></i> Circulars Posted</div>
+        <button class="btn-cyber primary sm" onclick="openCircularModal()"><i class="bi bi-plus"></i> New</button>
+      </div>
+      <div id="hodCircularList" style="max-height:280px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 3: Attendance Mark + Building Chart -->
+<div class="row g-3 mb-4">
+
+  <!-- Mark Attendance -->
+  <div class="col-lg-5">
+    <div class="dash-card border-green">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-calendar-check-fill" style="color:var(--neon-green)"></i> Mark Attendance</div>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="cyber-label">Subject</label>
+          <select class="cyber-select" id="hodAttSubject">
+            <option>Data Structures</option>
+            <option>DBMS</option>
+            <option>Operating Systems</option>
+            <option>Computer Networks</option>
+            <option>Software Engineering</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="cyber-label">Date</label>
+          <input type="date" class="cyber-input" id="hodAttDate"/>
+        </div>
+      </div>
+      <div id="hodAttStudentList" style="max-height:220px;overflow-y:auto"></div>
+      <button class="btn-cyber success w-100 mt-3" onclick="submitHodAttendance()"><i class="bi bi-check2-all"></i> Save Attendance</button>
+      <div id="hodAttMsg" class="mt-2"></div>
+    </div>
+  </div>
+
+  <!-- Building Occupancy Chart -->
+  <div class="col-lg-7">
+    <div class="dash-card border-purple">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-bar-chart-fill" style="color:var(--neon-purple)"></i> Building Occupancy</div>
+      </div>
+      <div class="chart-wrap"><canvas id="hodBuildingChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 4: Student Suggestions + Attendance Summary -->
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="dash-card border-blue">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-chat-square-text-fill" style="color:var(--neon-blue)"></i> Student Suggestions</div>
+        <span class="badge-pill blue" id="suggestBadge">0</span>
+      </div>
+      <div id="hodSuggestions" style="max-height:260px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="dash-card border-yellow">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-clipboard-data-fill" style="color:var(--neon-yellow)"></i> Attendance Summary</div>
+      </div>
+      <div id="hodAttSummary" style="max-height:260px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Post Circular Modal -->
+<div id="circularModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <div style="font-size:15px;font-weight:700;color:var(--neon-purple)"><i class="bi bi-megaphone-fill"></i> Post Circular</div>
+      <button onclick="closeCircularModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer">&times;</button>
+    </div>
+    <div class="mb-3">
+      <label class="cyber-label">Title</label>
+      <input class="cyber-input" id="circTitle" placeholder="Circular subject…"/>
+    </div>
+    <div class="mb-3">
+      <label class="cyber-label">Message</label>
+      <textarea class="cyber-textarea" id="circContent" rows="4" placeholder="Write the full circular content…"></textarea>
+    </div>
+    <div class="mb-3">
+      <label class="cyber-label">Target</label>
+      <select class="cyber-select" id="circTarget">
+        <option value="all">All (Students + Faculty)</option>
+        <option value="students">Students Only</option>
+        <option value="faculty">Faculty Only</option>
+      </select>
+    </div>
+    <button class="btn-cyber primary w-100" onclick="submitCircular()"><i class="bi bi-send-fill"></i> Post Circular</button>
+    <div id="circMsg" class="mt-2"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+let hodCharts = {};
+
+// Clock
+setInterval(()=>{
+  const el = document.getElementById('hodClock');
+  if(el) el.textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+async function loadKPIs() {
+  const d = await fetch('/api/analytics/summary').then(r=>r.json());
+  document.getElementById('hodRooms').textContent   = d.rooms.total;
+  document.getElementById('hodAvailPct').textContent = Math.round(d.rooms.available/d.rooms.total*100)+'% available';
+  document.getElementById('hodOcc').textContent      = d.avg_occupancy_pct+'%';
+  document.getElementById('hodIssues').textContent   = d.issues.open;
+  document.getElementById('hodIssuesSub').textContent= d.issues.total+' total';
+}
+
+// ── Building Chart ────────────────────────────────────────────────────────────
+async function loadBuilding() {
+  const data = await fetch('/api/analytics/occupancy').then(r=>r.json());
+  const b = {};
+  data.forEach(d=>{ if(!b[d.building]) b[d.building]={t:0,c:0}; b[d.building].t+=d.current; b[d.building].c+=d.capacity; });
+  const labels = Object.keys(b);
+  const vals   = labels.map(k=> b[k].c>0 ? Math.round(b[k].t/b[k].c*100) : 0);
+  if(hodCharts.building) hodCharts.building.destroy();
+  hodCharts.building = CyberCharts.bar('hodBuildingChart', labels,
+    [{label:'Occupancy %', data:vals,
+      colors:vals.map(v=>v>80?'rgba(255,51,102,0.7)':v>50?'rgba(255,204,0,0.7)':'rgba(123,47,255,0.7)'),
+      borderColors:vals.map(v=>v>80?'#ff3366':v>50?'#ffcc00':'#7b2fff')}],
+    {yMax:100,yLabel:'%'});
+}
+
+// ── Absentees ─────────────────────────────────────────────────────────────────
+async function loadAbsentees() {
+  const data = await fetch('/api/attendance/absent-alert').then(r=>r.json());
+  const subFilter = document.getElementById('hodAbsentSubject').value;
+  const filtered = subFilter ? data.filter(d=>d.subject===subFilter) : data;
+
+  document.getElementById('hodAbsent').textContent = filtered.length;
+  document.getElementById('absentBadge').textContent = filtered.length;
+
+  document.getElementById('hodAbsenteesTable').innerHTML = filtered.length
+    ? filtered.map(d=>`
+        <tr>
+          <td><span style="font-family:monospace;color:var(--neon-blue);font-size:12px">${d.usn}</span></td>
+          <td style="font-weight:500">${d.student_name}</td>
+          <td style="color:var(--text-secondary);font-size:12px">${d.subject}</td>
+          <td><span style="font-size:18px;font-weight:800;color:${d.absent_days>5?'var(--neon-red)':'var(--neon-yellow)'}">${d.absent_days}</span></td>
+          <td><span class="absent-badge ${d.absent_days>5?'critical':'warning'}">
+            ${d.absent_days>5?'⚠ Critical':'⚠ Warning'}
+          </span></td>
+        </tr>`).join('')
+    : '<tr><td colspan="5" class="text-center py-3" style="color:var(--neon-green)"><i class="bi bi-check-circle"></i> No frequent absentees</td></tr>';
+}
+
+// ── Circulars ─────────────────────────────────────────────────────────────────
+async function loadCirculars() {
+  const data = await fetch('/api/circulars').then(r=>r.json());
+  document.getElementById('hodCircularList').innerHTML = data.length
+    ? data.map(c=>`
+        <div class="circular-item ${c.role}">
+          <div class="circ-header">
+            <span class="circ-role-badge ${c.role}">${c.role.toUpperCase()}</span>
+            <span class="circ-date">${fmtDate(c.created_at)}</span>
+            <button onclick="deleteCircular(${c.id})" class="circ-del"><i class="bi bi-trash3"></i></button>
+          </div>
+          <div class="circ-title">${c.title}</div>
+          <div class="circ-body">${c.content}</div>
+          <div class="circ-meta">By ${c.posted_by} · ${c.target==='all'?'All':'Students only'}</div>
+        </div>`).join('')
+    : '<div class="text-center py-4 text-muted">No circulars posted yet</div>';
+}
+
+async function deleteCircular(id) {
+  await fetch('/api/circulars/'+id, {method:'DELETE'});
+  loadCirculars();
+}
+
+// ── Post Circular Modal ───────────────────────────────────────────────────────
+function openCircularModal()  { document.getElementById('circularModal').style.display='flex'; }
+function closeCircularModal() { document.getElementById('circularModal').style.display='none'; }
+
+async function submitCircular() {
+  const title   = document.getElementById('circTitle').value.trim();
+  const content = document.getElementById('circContent').value.trim();
+  const target  = document.getElementById('circTarget').value;
+  if(!title || !content) return;
+  const res = await fetch('/api/circulars',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title,content,target})}).then(r=>r.json());
+  if(res.ok){
+    document.getElementById('circMsg').innerHTML=`<div class="cyber-alert success mt-2"><i class="bi bi-check-circle"></i> Circular posted!</div>`;
+    document.getElementById('circTitle').value='';
+    document.getElementById('circContent').value='';
+    setTimeout(()=>{ closeCircularModal(); document.getElementById('circMsg').innerHTML=''; },1500);
+    loadCirculars();
+  }
+}
+
+// ── Attendance Marking ────────────────────────────────────────────────────────
+const STUDENTS = [
+  {usn:'1CS21001',name:'Rahul Sharma'},
+  {usn:'1CS21002',name:'Priya Nair'},
+  {usn:'1CS21003',name:'Arun Kumar'},
+  {usn:'1CS21004',name:'Sneha Patel'},
+  {usn:'1CS21005',name:'Kiran Reddy'},
+  {usn:'1CS21006',name:'Deepa Singh'},
+];
+
+function renderAttList() {
+  document.getElementById('hodAttStudentList').innerHTML = STUDENTS.map(s=>`
+    <div class="att-row">
+      <div class="att-info">
+        <span class="att-usn">${s.usn}</span>
+        <span class="att-name">${s.name}</span>
+      </div>
+      <div class="att-toggle">
+        <button class="att-btn present active" id="att_p_${s.usn}" onclick="setAtt('${s.usn}','present')">P</button>
+        <button class="att-btn absent"         id="att_a_${s.usn}" onclick="setAtt('${s.usn}','absent')">A</button>
+      </div>
+    </div>`).join('');
+}
+
+function setAtt(usn, status) {
+  document.getElementById('att_p_'+usn).classList.toggle('active', status==='present');
+  document.getElementById('att_a_'+usn).classList.toggle('active', status==='absent');
+}
+
+async function submitHodAttendance() {
+  const subject = document.getElementById('hodAttSubject').value;
+  const date    = document.getElementById('hodAttDate').value;
+  if(!date){ alert('Please select a date'); return; }
+  const records = STUDENTS.map(s=>({
+    usn: s.usn, student_name: s.name, subject, class_date: date,
+    status: document.getElementById('att_a_'+s.usn).classList.contains('active') ? 'absent' : 'present'
+  }));
+  const res = await fetch('/api/attendance',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({records})}).then(r=>r.json());
+  const msg = document.getElementById('hodAttMsg');
+  if(res.ok){
+    msg.innerHTML=`<div class="cyber-alert success"><i class="bi bi-check-circle"></i> Attendance saved for ${subject} on ${date}</div>`;
+    setTimeout(()=>msg.innerHTML='',3000);
+    loadAbsentees();
+    loadAttSummary();
+  }
+}
+
+// ── Attendance Summary ────────────────────────────────────────────────────────
+async function loadAttSummary() {
+  const data = await fetch('/api/attendance/summary').then(r=>r.json());
+  document.getElementById('hodAttSummary').innerHTML = data.map(s=>`
+    <div class="att-summary-row">
+      <div>
+        <div style="font-size:12px;font-family:monospace;color:var(--neon-blue)">${s.usn}</div>
+        <div style="font-size:13px;font-weight:600">${s.student_name}</div>
+      </div>
+      <div style="flex:1;margin:0 16px">
+        <div class="cyber-progress">
+          <div class="cyber-progress-bar ${s.pct<75?'red':s.pct<85?'yellow':'green'}" style="width:${s.pct}%"></div>
+        </div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:${s.pct<75?'var(--neon-red)':s.pct<85?'var(--neon-yellow)':'var(--neon-green)'}">
+        ${s.pct}%
+      </div>
+    </div>`).join('');
+}
+
+// ── Suggestions ───────────────────────────────────────────────────────────────
+async function loadSuggestions() {
+  const data = await fetch('/api/suggestions').then(r=>r.json());
+  document.getElementById('suggestBadge').textContent = data.filter(s=>s.status==='pending').length;
+  document.getElementById('hodSuggestions').innerHTML = data.length
+    ? data.map(s=>`
+        <div class="suggestion-card ${s.status}">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <span class="sug-subject">${s.subject}</span>
+            <span class="sug-status ${s.status}">${s.status}</span>
+          </div>
+          <div class="sug-msg">${s.message}</div>
+          <div class="sug-meta">
+            <span>${s.student_name} (${s.usn})</span>
+            <span>${fmtDate(s.created_at)}</span>
+            ${s.status==='pending'?`<button class="btn-cyber outline sm" style="padding:2px 8px;font-size:10px"
+              onclick="reviewSuggestion(${s.id})">Mark Reviewed</button>`:''}
+          </div>
+        </div>`).join('')
+    : '<div class="text-center py-4 text-muted">No suggestions yet</div>';
+}
+
+async function reviewSuggestion(id) {
+  await fetch('/api/suggestions/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({status:'reviewed'})});
+  loadSuggestions();
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' ' +
+         d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function refreshAll() {
+  await Promise.all([loadKPIs(), loadBuilding(), loadAbsentees(), loadCirculars(), loadAttSummary(), loadSuggestions()]);
+}
+
+// Init
+document.getElementById('hodAttDate').valueAsDate = new Date();
+renderAttList();
+refreshAll();
+setInterval(()=>{ loadKPIs(); loadAbsentees(); }, 30000);
+</script>
+{% endblock %}

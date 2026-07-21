@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Analytics — Smart Campus</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="bg-fx" id="bgFx"></div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><div class="brand-icon"><i class="bi bi-cpu-fill"></i></div>
+    <div class="brand-text"><div class="brand-title">SmartCampus</div><div class="brand-sub">Digital Twin v3.0</div></div></div>
+  <div class="sidebar-status"><span class="pulse-dot"></span><span>Firebase Live</span>
+    <span class="ms-auto" style="font-size:10px;color:var(--muted)" id="sidebarClock"></span></div>
+  <ul class="sidebar-nav">
+    <li><a href="../index.html" class="nav-link"><i class="bi bi-map-fill"></i><span class="nav-label">Campus Twin</span></a></li>
+    <li><a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a></li>
+    <li><a href="issues.html" class="nav-link"><i class="bi bi-exclamation-triangle-fill"></i><span class="nav-label">Issue Engine</span><span class="nav-badge" id="openIssuesBadge">–</span></a></li>
+    <li><a href="maintenance.html" class="nav-link"><i class="bi bi-tools"></i><span class="nav-label">Maintenance AI</span></a></li>
+    <li><a href="analytics.html" class="nav-link active"><i class="bi bi-graph-up-arrow"></i><span class="nav-label">Analytics</span></a></li>
+    <li><a href="resources.html" class="nav-link"><i class="bi bi-box-seam-fill"></i><span class="nav-label">Resources</span></a></li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="sf-item"><i class="bi bi-building" style="color:var(--blue)"></i><span class="sf-label" id="sfRooms">–</span></div>
+    <div class="sf-item"><i class="bi bi-exclamation-circle" style="color:var(--red)"></i><span class="sf-label" id="sfIssues">–</span></div>
+  </div>
+</nav>
+
+<div class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+    <div class="topbar-title"><i class="bi bi-graph-up-arrow me-2" style="color:var(--green)"></i>Occupancy Analytics & Heatmaps</div>
+    <div class="topbar-right">
+      <div class="live-pill"><span class="pulse-dot"></span>LIVE</div>
+      <div class="topbar-stat"><i class="bi bi-building"></i><span id="tbAvail">–</span></div>
+      <div class="topbar-stat" style="color:var(--yellow)"><i class="bi bi-exclamation-circle"></i><span id="tbIssues">–</span></div>
+      <button class="notif-btn"><i class="bi bi-bell-fill"></i><span class="notif-dot" id="notifBadge">0</span></button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- Tabs -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+      <button class="btn-cyber outline sm tab-btn active" data-tab="occupancy"><i class="bi bi-people-fill"></i> Occupancy</button>
+      <button class="btn-cyber outline sm tab-btn" data-tab="heatmap"><i class="bi bi-grid-3x3-gap-fill"></i> Heatmaps</button>
+      <button class="btn-cyber outline sm tab-btn" data-tab="congestion"><i class="bi bi-people-fill"></i> Congestion</button>
+      <button class="btn-cyber outline sm tab-btn" data-tab="predictions"><i class="bi bi-lightning-fill"></i> Predictions</button>
+    </div>
+
+    <!-- Occupancy tab -->
+    <div id="tab-occupancy">
+      <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+          <div class="glass-card glow-green">
+            <div class="sec-header"><div class="sec-title"><i class="bi bi-bar-chart-fill"></i>Current Occupancy by Room</div></div>
+            <div class="chart-wrap"><canvas id="occBarChart"></canvas></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="glass-card">
+            <div class="sec-title mb-3"><i class="bi bi-building"></i>Building Summary</div>
+            <div id="bldSummary"></div>
+          </div>
+        </div>
+      </div>
+      <div class="glass-card">
+        <div class="sec-header"><div class="sec-title"><i class="bi bi-table"></i>Room Occupancy Details</div></div>
+        <div class="table-responsive"><table class="cyber-table">
+          <thead><tr><th>Room</th><th>Building</th><th>Current</th><th>Capacity</th><th>Utilization</th><th>Predicted Next</th></tr></thead>
+          <tbody id="occTable"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- Heatmap tab -->
+    <div id="tab-heatmap" style="display:none">
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="glass-card glow-blue">
+            <div class="sec-title mb-3"><i class="bi bi-fire"></i>Issue Density Heatmap</div>
+            <div id="issueDensityHM" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="glass-card glow-purple">
+            <div class="sec-title mb-3"><i class="bi bi-people-fill"></i>Occupancy Heatmap</div>
+            <div id="occupancyHM" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="glass-card mt-3">
+        <div class="sec-title mb-2"><i class="bi bi-info-circle"></i>Legend</div>
+        <div class="d-flex gap-3 align-items-center">
+          <div style="width:160px;height:16px;background:linear-gradient(90deg,rgba(0,255,136,0.5),rgba(255,204,0,0.7),rgba(255,51,102,0.9));border-radius:4px"></div>
+          <span style="font-size:12px;color:var(--text2)">Low → Medium → High</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Congestion tab -->
+    <div id="tab-congestion" style="display:none">
+      <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+          <div class="glass-card glow-blue">
+            <div class="sec-header">
+              <div class="sec-title"><i class="bi bi-people-fill"></i>Campus Congestion Map</div>
+              <div class="d-flex gap-2 flex-wrap" style="font-size:11px">
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(0,255,136,0.6);margin-right:4px"></span>Low</span>
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,204,0,0.6);margin-right:4px"></span>Medium</span>
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,102,0,0.6);margin-right:4px"></span>High</span>
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,51,102,0.8);margin-right:4px"></span>Critical</span>
+              </div>
+            </div>
+            <div class="cong-grid" id="congGrid"></div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="glass-card mb-3">
+            <div class="sec-title mb-3"><i class="bi bi-bar-chart-fill"></i>By Building</div>
+            <div class="chart-wrap" style="max-height:200px"><canvas id="congBldChart"></canvas></div>
+          </div>
+          <div class="glass-card">
+            <div class="sec-title mb-3"><i class="bi bi-trophy-fill" style="color:var(--red)"></i>Most Congested</div>
+            <div id="topCongested"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Predictions tab -->
+    <div id="tab-predictions" style="display:none">
+      <div class="row g-3 mb-3">
+        <div class="col-lg-6">
+          <div class="glass-card glow-blue">
+            <div class="sec-title mb-3"><i class="bi bi-lightning-charge-fill"></i>Next-Hour Predictions</div>
+            <div id="nextHourPreds"></div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="glass-card">
+            <div class="sec-title mb-3"><i class="bi bi-radar"></i>Building Radar</div>
+            <div class="chart-wrap" style="max-height:260px"><canvas id="radarChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+      <div class="glass-card">
+        <div class="sec-title mb-3"><i class="bi bi-calendar-week"></i>Peak Hours Analysis</div>
+        <div class="row g-3" id="peakHours"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script type="module">
+import { db, C, seedIfEmpty, collection, onSnapshot } from "../js/firebase-config.js";
+import { barChart, radarChart as radarC, PALETTE } from "../js/charts.js";
+import { showToast, startClock, initSidebar, progressBar } from "../js/app.js";
+import { predictOccupancy, heatColor, congestionLevel } from "../js/ai-engine.js";
+
+(function(){ const c=document.getElementById("bgFx"); for(let i=0;i<28;i++){const p=document.createElement("div");p.className="particle";p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*12}s`;c.appendChild(p);}})();
+startClock("sidebarClock"); initSidebar();
+
+let roomsData=[], issuesData=[], charts={};
+
+// Tab switching
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    ["occupancy","heatmap","congestion","predictions"].forEach(t=>{ document.getElementById("tab-"+t).style.display="none"; });
+    btn.classList.add("active");
+    const tab=btn.dataset.tab;
+    document.getElementById("tab-"+tab).style.display="block";
+    if(tab==="heatmap") renderHeatmaps();
+    if(tab==="congestion") renderCongestion();
+    if(tab==="predictions") renderPredictions();
+  });
+});
+
+async function init() {
+  await seedIfEmpty();
+  onSnapshot(collection(db, C.ROOMS), snap=>{
+    roomsData=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderOccupancy();
+    const avail=roomsData.filter(r=>r.status==="available").length;
+    const fault=roomsData.filter(r=>r.status==="fault").length;
+    document.getElementById("tbAvail").textContent=avail;
+    document.getElementById("sfRooms").textContent=roomsData.length+" rooms";
+  });
+  onSnapshot(collection(db, C.ISSUES), snap=>{
+    issuesData=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const open=issuesData.filter(i=>i.status==="open").length;
+    document.getElementById("openIssuesBadge").textContent=open;
+    document.getElementById("notifBadge").textContent=open;
+    document.getElementById("tbIssues").textContent=open;
+    document.getElementById("sfIssues").textContent=open+" issues";
+  });
+}
+
+function renderOccupancy() {
+  const pcts=roomsData.map(r=>r.capacity>0?Math.round(r.occupancy/r.capacity*100):0);
+  if(charts.occ) charts.occ.destroy();
+  charts.occ=barChart("occBarChart",roomsData.map(r=>r.id),[{
+    label:"Occupancy %",data:pcts,
+    colors:pcts.map(v=>v>80?"rgba(255,51,102,0.75)":v>50?"rgba(255,204,0,0.75)":"rgba(0,255,136,0.75)"),
+    borders:pcts.map(v=>v>80?"#ff3366":v>50?"#ffcc00":"#00ff88"),
+  }],{yMax:100,pct:true});
+
+  // Building summary
+  const blds={};
+  roomsData.forEach(r=>{ if(!blds[r.building]) blds[r.building]={t:0,c:0,rooms:0}; blds[r.building].t+=r.occupancy; blds[r.building].c+=r.capacity; blds[r.building].rooms++; });
+  document.getElementById("bldSummary").innerHTML=Object.entries(blds).map(([n,b])=>{
+    const p=b.c>0?Math.round(b.t/b.c*100):0;
+    return `<div class="mb-3">
+      <div class="d-flex justify-content-between mb-1">
+        <span style="font-size:13px;font-weight:500">${n}</span>
+        <span style="font-size:12px;color:${p>80?"var(--red)":p>50?"var(--yellow)":"var(--green)"}">${p}%</span>
+      </div>
+      ${progressBar(p)}
+      <div style="font-size:11px;color:var(--muted)">${b.t}/${b.c} · ${b.rooms} rooms</div>
+    </div>`;
+  }).join("");
+
+  // Table
+  document.getElementById("occTable").innerHTML=roomsData.map(r=>{
+    const p=r.capacity>0?Math.round(r.occupancy/r.capacity*100):0;
+    const pred=predictOccupancy(r.occupancy,r.capacity,r.type);
+    return `<tr>
+      <td style="font-weight:500">${r.name}</td>
+      <td style="color:var(--blue);font-size:12px">${r.building}</td>
+      <td>${r.occupancy}</td><td>${r.capacity}</td>
+      <td><div class="d-flex align-items-center gap-2">
+        <div class="cyber-progress" style="width:80px"><div class="cyber-progress-bar ${p>80?"red":p>50?"yellow":"green"}" style="width:${p}%"></div></div>
+        <span style="font-size:12px">${p}%</span></div></td>
+      <td style="color:var(--blue);font-size:12px">${pred.predicted} people</td>
+    </tr>`;
+  }).join("");
+}
+
+function renderHeatmaps() {
+  const issueMap={};
+  issuesData.forEach(i=>{ issueMap[i.location]=(issueMap[i.location]||0)+1; });
+  const maxIssue=Math.max(...Object.values(issueMap),1);
+  const rooms=roomsData.map(r=>r.id);
+
+  document.getElementById("issueDensityHM").innerHTML=rooms.map(id=>{
+    const v=issueMap[id]||0;
+    return `<div class="heatmap-cell" style="background:${heatColor(v,maxIssue)}" title="${id}: ${v} issues">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7)">${id}</div>
+      <div style="font-size:20px;font-weight:800;color:${v>2?"#ff3366":v>0?"#ffcc00":"#00ff88"};line-height:1.2">${v}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.4)">issues</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("occupancyHM").innerHTML=roomsData.map(r=>{
+    const p=r.capacity>0?Math.round(r.occupancy/r.capacity*100):0;
+    return `<div class="heatmap-cell" style="background:${heatColor(p,100)}" title="${r.id}: ${p}%">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7)">${r.id}</div>
+      <div style="font-size:20px;font-weight:800;color:${p>80?"#ff3366":p>50?"#ffcc00":"#00ff88"};line-height:1.2">${p}%</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.4)">occupied</div>
+    </div>`;
+  }).join("");
+}
+
+function renderCongestion() {
+  const sorted=[...roomsData].sort((a,b)=>{
+    const pa=a.capacity>0?a.occupancy/a.capacity*100:0;
+    const pb=b.capacity>0?b.occupancy/b.capacity*100:0;
+    return pb-pa;
+  });
+  document.getElementById("congGrid").innerHTML=sorted.map(r=>{
+    const p=r.capacity>0?Math.round(r.occupancy/r.capacity*100):0;
+    const cl=congestionLevel(p);
+    return `<div class="cong-cell" style="background:${cl.bg};border-color:${cl.color}44">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6)">${r.id}</div>
+      <div style="font-size:18px;font-weight:800;color:${cl.color};line-height:1.2">${p}%</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.4)">${r.name.replace(/^(Lab|Class|Room)\s/,"")}</div>
+    </div>`;
+  }).join("");
+
+  // Building congestion chart
+  const blds={};
+  roomsData.forEach(r=>{ if(!blds[r.building]) blds[r.building]={t:0,c:0}; blds[r.building].t+=r.occupancy; blds[r.building].c+=r.capacity; });
+  const bLabels=Object.keys(blds), bVals=bLabels.map(b=>blds[b].c>0?Math.round(blds[b].t/blds[b].c*100):0);
+  if(charts.congBld) charts.congBld.destroy();
+  charts.congBld=barChart("congBldChart",bLabels,[{
+    label:"Congestion %",data:bVals,
+    colors:bVals.map(v=>v>80?"rgba(255,51,102,0.75)":v>65?"rgba(255,102,0,0.75)":v>35?"rgba(255,204,0,0.75)":"rgba(0,255,136,0.75)"),
+    borders:bVals.map(v=>v>80?"#ff3366":v>65?"#ff6600":v>35?"#ffcc00":"#00ff88"),
+  }],{yMax:100,pct:true});
+
+  // Top congested
+  document.getElementById("topCongested").innerHTML=sorted.slice(0,5).map((r,i)=>{
+    const p=r.capacity>0?Math.round(r.occupancy/r.capacity*100):0;
+    const cl=congestionLevel(p);
+    return `<div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04)">
+      <div class="d-flex align-items-center gap-2">
+        <span style="font-size:11px;color:var(--muted);width:16px">#${i+1}</span>
+        <div><div style="font-size:13px;font-weight:500">${r.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.building}</div></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:700;color:${cl.color}">${p}%</div>
+        <div style="font-size:10px;color:var(--muted)">${r.occupancy}/${r.capacity}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderPredictions() {
+  // Next-hour predictions
+  document.getElementById("nextHourPreds").innerHTML=roomsData.slice(0,10).map(r=>{
+    const pred=predictOccupancy(r.occupancy,r.capacity,r.type);
+    return `<div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04)">
+      <div><div style="font-size:13px;font-weight:500">${r.name}</div>
+        <div style="font-size:11px;color:var(--muted)">Now: ${r.occupancy}/${r.capacity}</div></div>
+      <div style="text-align:right">
+        <div style="font-size:15px;font-weight:700;color:var(--blue)">${pred.predicted}</div>
+        <div style="font-size:10px;color:var(--muted)">${pred.confidence}% conf.</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Radar chart by building
+  const blds={};
+  roomsData.forEach(r=>{ if(!blds[r.building]) blds[r.building]={t:0,c:0}; blds[r.building].t+=r.occupancy; blds[r.building].c+=r.capacity; });
+  const bLabels=Object.keys(blds), bVals=bLabels.map(b=>blds[b].c>0?Math.round(blds[b].t/blds[b].c*100):0);
+  if(charts.radar) charts.radar.destroy();
+  charts.radar=radarC("radarChart",bLabels,[{ label:"Occupancy %", data:bVals, color:"blue" }]);
+
+  // Peak hours (simulated)
+  const peakData=[{h:8,p:72},{h:9,p:85},{h:10,p:78},{h:11,p:65},{h:13,p:80},{h:14,p:88},{h:15,p:75},{h:16,p:60}];
+  document.getElementById("peakHours").innerHTML=peakData.map(d=>`
+    <div class="col-6 col-md-3 col-lg-2">
+      <div class="glass-card text-center" style="padding:14px">
+        <div style="font-size:24px;font-weight:700;color:var(--yellow)">${d.h}:00</div>
+        <div style="font-size:14px;font-weight:600;color:${d.p>80?"var(--red)":"var(--yellow)"}">${d.p}%</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">avg occupancy</div>
+        ${progressBar(d.p, d.p>80?"red":"yellow")}
+      </div>
+    </div>`).join("");
+}
+
+init();
+</script>
+</body>
+</html>

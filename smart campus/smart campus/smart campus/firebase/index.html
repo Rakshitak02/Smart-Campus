@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Smart Campus Digital Twin</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="bg-fx" id="bgFx"></div>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="bi bi-cpu-fill"></i></div>
+    <div class="brand-text">
+      <div class="brand-title">SmartCampus</div>
+      <div class="brand-sub">Digital Twin v3.0</div>
+    </div>
+  </div>
+  <div class="sidebar-status">
+    <span class="pulse-dot"></span>
+    <span>Firebase Live</span>
+    <span class="ms-auto" style="font-size:10px;color:var(--muted)" id="sidebarClock"></span>
+  </div>
+  <ul class="sidebar-nav">
+    <li><a href="../index.html" class="nav-link active">
+      <i class="bi bi-map-fill"></i><span class="nav-label">Campus Twin</span></a></li>
+    <li><a href="pages/dashboard.html" class="nav-link">
+      <i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a></li>
+    <li><a href="pages/issues.html" class="nav-link">
+      <i class="bi bi-exclamation-triangle-fill"></i><span class="nav-label">Issue Engine</span>
+      <span class="nav-badge" id="openIssuesBadge">–</span></a></li>
+    <li><a href="pages/maintenance.html" class="nav-link">
+      <i class="bi bi-tools"></i><span class="nav-label">Maintenance AI</span></a></li>
+    <li><a href="pages/analytics.html" class="nav-link">
+      <i class="bi bi-graph-up-arrow"></i><span class="nav-label">Analytics</span></a></li>
+    <li><a href="pages/resources.html" class="nav-link">
+      <i class="bi bi-box-seam-fill"></i><span class="nav-label">Resources</span></a></li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="sf-item"><i class="bi bi-wifi" style="color:var(--blue)"></i><span class="sf-label" id="sfRooms">–</span></div>
+    <div class="sf-item"><i class="bi bi-exclamation-circle" style="color:var(--red)"></i><span class="sf-label" id="sfIssues">–</span></div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<div class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+    <div class="topbar-title"><i class="bi bi-map-fill me-2" style="color:var(--blue)"></i>Interactive Campus Digital Twin</div>
+    <div class="topbar-right">
+      <div class="live-pill"><span class="pulse-dot"></span>LIVE</div>
+      <div class="topbar-stat"><i class="bi bi-building"></i><span id="tbAvail">–</span> Available</div>
+      <div class="topbar-stat" style="color:var(--yellow)"><i class="bi bi-exclamation-circle"></i><span id="tbIssues">–</span> Issues</div>
+      <div class="topbar-stat" style="color:var(--red)"><i class="bi bi-x-circle"></i><span id="tbFaults">–</span> Faults</div>
+      <button class="notif-btn"><i class="bi bi-bell-fill"></i><span class="notif-dot" id="notifBadge">0</span></button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- KPI row -->
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-3">
+        <div class="stat-card green">
+          <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+          <div><div class="stat-value" style="color:var(--green)" id="kpiAvail">–</div><div class="stat-label">Available</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card yellow">
+          <div class="stat-icon yellow"><i class="bi bi-clock-fill"></i></div>
+          <div><div class="stat-value" style="color:var(--yellow)" id="kpiBusy">–</div><div class="stat-label">Busy</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card red">
+          <div class="stat-icon red"><i class="bi bi-x-circle-fill"></i></div>
+          <div><div class="stat-value" style="color:var(--red)" id="kpiFault">–</div><div class="stat-label">Fault</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card blue">
+          <div class="stat-icon blue"><i class="bi bi-building"></i></div>
+          <div><div class="stat-value" style="color:var(--blue)" id="kpiTotal">–</div><div class="stat-label">Total Rooms</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- Map -->
+      <div class="col-lg-8">
+        <div class="glass-card glow-blue" style="padding:16px">
+          <div class="sec-header">
+            <div class="sec-title"><i class="bi bi-map"></i>Live Campus Map</div>
+            <div class="d-flex gap-2 align-items-center">
+              <div class="map-legend">
+                <span><span class="legend-dot" style="background:#00ff88"></span> Available</span>
+                <span><span class="legend-dot" style="background:#ffcc00"></span> Busy</span>
+                <span><span class="legend-dot" style="background:#ff3366"></span> Fault</span>
+                <span><span class="legend-dot" style="background:#00d4ff;border-radius:2px"></span> WiFi</span>
+              </div>
+              <button class="btn-cyber outline sm" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+          </div>
+          <div style="overflow:auto">
+            <canvas id="campusCanvas" width="820" height="510"></canvas>
+          </div>
+          <div class="mt-2" style="font-size:11px;color:var(--muted)">
+            <i class="bi bi-cursor"></i> Click any room for details &nbsp;|&nbsp;
+            <i class="bi bi-wifi"></i> WiFi nodes show live signal
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="col-lg-4">
+        <div class="glass-card mb-3" style="padding:16px">
+          <div class="sec-title mb-3"><i class="bi bi-list-ul"></i>Room Status</div>
+          <div id="roomList" style="max-height:240px;overflow-y:auto">
+            <div class="skeleton" style="height:40px;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:40px;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:40px"></div>
+          </div>
+        </div>
+        <div class="glass-card" style="padding:16px">
+          <div class="sec-title mb-3"><i class="bi bi-wifi"></i>WiFi Nodes</div>
+          <div id="wifiList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room detail panel -->
+<div id="roomPanel">
+  <button class="panel-close" onclick="closePanel()"><i class="bi bi-x-lg"></i></button>
+  <div id="roomPanelContent"><div class="text-center py-5" style="color:var(--muted)">Select a room</div></div>
+</div>
+<div id="panelOverlay" onclick="closePanel()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:499"></div>
+<div id="mapTooltip"></div>
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+import { db, C, seedIfEmpty, collection, doc, getDocs, getDoc,
+         updateDoc, onSnapshot, query, orderBy, serverTimestamp }
+  from "./js/firebase-config.js";
+import { CampusMap }  from "./js/campus-map.js";
+import { showToast, startClock, initSidebar, animateCount, timeAgo, statusBadge, progressBar }
+  from "./js/app.js";
+import { predictOccupancy } from "./js/ai-engine.js";
+
+// ── Particles ─────────────────────────────────────────────────────────────────
+(function(){
+  const c = document.getElementById("bgFx");
+  for(let i=0;i<28;i++){
+    const p=document.createElement("div"); p.className="particle";
+    p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;
+      width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;
+      animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*12}s`;
+    c.appendChild(p);
+  }
+})();
+
+startClock("sidebarClock");
+initSidebar();
+
+let campusMap;
+let roomsCache = {};
+let issuesCache = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  await seedIfEmpty();
+
+  campusMap = new CampusMap("campusCanvas", showRoomDetail);
+
+  // Live rooms listener
+  onSnapshot(collection(db, C.ROOMS), snap => {
+    roomsCache = {};
+    const rooms = [];
+    snap.forEach(d => {
+      const r = { id: d.id, ...d.data() };
+      roomsCache[r.id] = r;
+      rooms.push(r);
+    });
+    updateKPIs(rooms);
+    renderRoomList(rooms);
+    campusMap.setRooms(rooms.map(r => ({
+      id: r.id, name: r.name, status: r.status,
+      occupancy: r.occupancy, capacity: r.capacity,
+      building: r.building, type: r.type, openIssues: 0,
+    })));
+  });
+
+  // Live issues listener
+  onSnapshot(collection(db, C.ISSUES), snap => {
+    issuesCache = [];
+    const issueMap = {};
+    snap.forEach(d => {
+      const i = { id: d.id, ...d.data() };
+      issuesCache.push(i);
+      if (i.status !== "resolved") {
+        issueMap[i.location] = (issueMap[i.location] || 0) + 1;
+      }
+    });
+    // Inject open issue counts into map
+    const rooms = Object.values(roomsCache).map(r => ({
+      ...r, openIssues: issueMap[r.id] || 0,
+    }));
+    campusMap.setRooms(rooms);
+    // Update topbar
+    const open = issuesCache.filter(i => i.status === "open").length;
+    document.getElementById("tbIssues").textContent = open;
+    document.getElementById("openIssuesBadge").textContent = open;
+    document.getElementById("notifBadge").textContent = open;
+    document.getElementById("sfIssues").textContent = open + " issues";
+  });
+
+  // Live WiFi listener
+  onSnapshot(collection(db, C.WIFI), snap => {
+    const nodes = [];
+    snap.forEach(d => nodes.push({ id: d.id, ...d.data() }));
+    campusMap.setWifi(nodes);
+    renderWifiList(nodes);
+  });
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function updateKPIs(rooms) {
+  const avail  = rooms.filter(r => r.status === "available").length;
+  const busy   = rooms.filter(r => r.status === "busy").length;
+  const fault  = rooms.filter(r => r.status === "fault").length;
+  animateCount(document.getElementById("kpiAvail"),  avail);
+  animateCount(document.getElementById("kpiBusy"),   busy);
+  animateCount(document.getElementById("kpiFault"),  fault);
+  animateCount(document.getElementById("kpiTotal"),  rooms.length);
+  document.getElementById("tbAvail").textContent  = avail;
+  document.getElementById("tbFaults").textContent = fault;
+  document.getElementById("sfRooms").textContent  = rooms.length + " rooms";
+}
+
+// ── Room list ─────────────────────────────────────────────────────────────────
+function renderRoomList(rooms) {
+  document.getElementById("roomList").innerHTML = rooms.map(r => `
+    <div class="d-flex align-items-center justify-content-between py-2"
+         style="border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer"
+         onclick="showRoomDetail('${r.id}')">
+      <div>
+        <div style="font-size:13px;font-weight:500">${r.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${r.building} · ${r.occupancy}/${r.capacity}</div>
+      </div>
+      ${statusBadge(r.status)}
+    </div>`).join("");
+}
+
+// ── WiFi list ─────────────────────────────────────────────────────────────────
+function renderWifiList(nodes) {
+  document.getElementById("wifiList").innerHTML = nodes.map(w => {
+    const color = w.signal > 80 ? "var(--green)" : w.signal > 60 ? "var(--yellow)" : "var(--red)";
+    const cls   = w.signal > 80 ? "green" : w.signal > 60 ? "yellow" : "red";
+    return `
+      <div class="d-flex align-items-center justify-content-between py-2"
+           style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div>
+          <div style="font-size:13px;font-weight:500">Node ${w.id}</div>
+          <div style="font-size:11px;color:var(--muted)">${w.connected} devices · ${w.building}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:14px;font-weight:700;color:${color}">${w.signal}%</div>
+          <div class="cyber-progress" style="width:60px">
+            <div class="cyber-progress-bar ${cls}" style="width:${w.signal}%"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+// ── Room detail panel ─────────────────────────────────────────────────────────
+window.showRoomDetail = async function(roomId) {
+  const panel   = document.getElementById("roomPanel");
+  const overlay = document.getElementById("panelOverlay");
+  const content = document.getElementById("roomPanelContent");
+  content.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-info" style="width:24px;height:24px"></div></div>`;
+  panel.classList.add("open"); overlay.style.display = "block";
+
+  const room = roomsCache[roomId];
+  if (!room) return;
+
+  const pct  = room.capacity > 0 ? Math.round(room.occupancy / room.capacity * 100) : 0;
+  const pred = predictOccupancy(room.occupancy, room.capacity, room.type);
+  const roomIssues = issuesCache.filter(i => i.location === roomId && i.status !== "resolved");
+
+  content.innerHTML = `
+    <div class="mb-3">
+      <div style="font-size:18px;font-weight:700;color:var(--blue)">${room.name}</div>
+      <div style="font-size:12px;color:var(--muted)">${room.building} · ${room.type}</div>
+    </div>
+    ${statusBadge(room.status)}
+
+    <div class="glass-card my-3" style="padding:14px">
+      <div class="d-flex justify-content-between mb-2">
+        <span style="font-size:12px;color:var(--text2)">Occupancy</span>
+        <span style="font-size:12px;font-weight:600">${room.occupancy} / ${room.capacity}</span>
+      </div>
+      ${progressBar(pct)}
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">
+        Predicted next hour: <strong style="color:var(--blue)">${pred.predicted}</strong>
+        <span style="color:var(--muted)">(${pred.confidence}% confidence)</span>
+      </div>
+    </div>
+
+    ${room.equipment?.length ? `
+    <div class="mb-3">
+      <div class="sec-title mb-2"><i class="bi bi-box-seam"></i>Equipment</div>
+      <div class="d-flex flex-wrap gap-1">
+        ${room.equipment.map(e => `<span style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);border-radius:5px;padding:2px 8px;font-size:11px;color:var(--blue)">${e}</span>`).join("")}
+      </div>
+    </div>` : ""}
+
+    ${roomIssues.length ? `
+    <div class="mb-3">
+      <div class="sec-title mb-2"><i class="bi bi-exclamation-triangle"></i>Open Issues</div>
+      ${roomIssues.map(i => `
+        <div class="cyber-alert ${i.priority==="high"?"error":i.priority==="medium"?"warning":"info"} mb-1" style="padding:8px 12px;font-size:12px">
+          <i class="bi bi-dot"></i>${i.title}
+          <span class="priority-badge ${i.priority} ms-auto">${i.priority}</span>
+        </div>`).join("")}
+    </div>` : `<div class="cyber-alert success" style="font-size:12px"><i class="bi bi-check-circle"></i> No open issues</div>`}
+
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn-cyber outline sm flex-fill" onclick="setRoomStatus('${roomId}','available')">
+        <i class="bi bi-check-circle"></i> Available</button>
+      <button class="btn-cyber sm flex-fill" style="background:rgba(255,204,0,0.18);color:#ffcc00;border:1px solid #ffcc00"
+              onclick="setRoomStatus('${roomId}','busy')">
+        <i class="bi bi-clock"></i> Busy</button>
+      <button class="btn-cyber danger sm flex-fill" onclick="setRoomStatus('${roomId}','fault')">
+        <i class="bi bi-x-circle"></i> Fault</button>
+    </div>
+    <a href="pages/issues.html" class="btn-cyber primary sm w-100 mt-2 justify-content-center">
+      <i class="bi bi-plus-circle"></i> Report Issue</a>`;
+};
+
+window.setRoomStatus = async function(roomId, status) {
+  await updateDoc(doc(db, C.ROOMS, roomId), { status, lastUpdated: serverTimestamp() });
+  showToast(`Room ${roomId} → ${status}`, "success");
+  showRoomDetail(roomId);
+};
+
+window.closePanel = function() {
+  document.getElementById("roomPanel").classList.remove("open");
+  document.getElementById("panelOverlay").style.display = "none";
+};
+
+window.refreshAll = function() { showToast("Live data refreshed from Firebase", "success"); };
+
+init();
+</script>
+</body>
+</html>

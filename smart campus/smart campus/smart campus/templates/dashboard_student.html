@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard{% endblock %}
+{% block page_title %}<i class="bi bi-person-fill me-2" style="color:var(--neon-yellow)"></i>Student Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Welcome -->
+<div class="hod-welcome mb-4" style="border-color:rgba(255,204,0,0.2);">
+  <div class="welcome-left">
+    <div class="welcome-avatar student"><i class="bi bi-person-fill"></i></div>
+    <div>
+      <div class="welcome-name">{{ user.name }} &nbsp;<span class="role-badge student"><i class="bi bi-mortarboard"></i> Student</span></div>
+      <div class="welcome-sub">View circulars, check your attendance & share feedback · <span id="stuClock" style="color:var(--neon-yellow)"></span></div>
+    </div>
+  </div>
+  <div class="welcome-actions">
+    <button class="btn-cyber outline sm" onclick="refreshStudent()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    <a href="/" class="btn-cyber outline sm"><i class="bi bi-map-fill"></i> Campus Map</a>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card green">
+      <div class="kpi-icon"><i class="bi bi-door-open-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="stuAvail">–</div>
+        <div class="kpi-label">Open Rooms</div>
+        <div class="kpi-sub">available now</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card yellow">
+      <div class="kpi-icon"><i class="bi bi-bell-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="stuCircCount">–</div>
+        <div class="kpi-label">Circulars</div>
+        <div class="kpi-sub">latest notices</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card blue">
+      <div class="kpi-icon"><i class="bi bi-box-seam-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="stuFreeRes">–</div>
+        <div class="kpi-label">Free Equipment</div>
+        <div class="kpi-sub">available to borrow</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card purple">
+      <div class="kpi-icon"><i class="bi bi-chat-dots-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-val" id="stuMySugCount">–</div>
+        <div class="kpi-label">My Suggestions</div>
+        <div class="kpi-sub">posted by me</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 2: Circulars (main focus) -->
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="dash-card border-yellow">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-megaphone-fill" style="color:var(--neon-yellow)"></i> Circulars &amp; Notices</div>
+        <div class="d-flex gap-2">
+          <select class="cyber-select" id="stuCircFilter" style="width:140px;padding:5px 10px;font-size:12px" onchange="filterCirculars()">
+            <option value="all">All Sources</option>
+            <option value="hod">From HOD</option>
+            <option value="faculty">From Faculty</option>
+          </select>
+        </div>
+      </div>
+      <div id="stuCircularGrid" class="circular-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 3: Attendance + Post Suggestion -->
+<div class="row g-3 mb-4">
+
+  <!-- My Attendance -->
+  <div class="col-lg-6">
+    <div class="dash-card border-blue">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-clipboard-check-fill" style="color:var(--neon-blue)"></i> My Attendance</div>
+        <select class="cyber-select" id="stuAttSubject" style="width:160px;padding:5px 10px;font-size:12px" onchange="loadMyAttendance()">
+          <option value="">All Subjects</option>
+          <option>Data Structures</option><option>DBMS</option>
+          <option>Operating Systems</option><option>Computer Networks</option>
+          <option>Software Engineering</option>
+        </select>
+      </div>
+      <div id="stuAttList" style="max-height:280px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- Post Suggestion -->
+  <div class="col-lg-6">
+    <div class="dash-card border-purple">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-lightbulb-fill" style="color:var(--neon-purple)"></i> Post Suggestion / Feedback</div>
+      </div>
+      <div class="mb-3">
+        <label class="cyber-label">Your USN</label>
+        <input class="cyber-input" id="stuUSN" placeholder="e.g. 1CS21001"/>
+      </div>
+      <div class="mb-3">
+        <label class="cyber-label">Subject / Class</label>
+        <select class="cyber-select" id="stuSugSubject">
+          <option>Data Structures</option><option>DBMS</option>
+          <option>Operating Systems</option><option>Computer Networks</option>
+          <option>Software Engineering</option><option>General</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="cyber-label">Your Suggestion</label>
+        <textarea class="cyber-textarea" id="stuSugMsg" rows="4" placeholder="Share your feedback or suggestion about the class, teaching method, or subject content…"></textarea>
+      </div>
+      <button class="btn-cyber primary w-100" onclick="submitSuggestion()">
+        <i class="bi bi-send-fill"></i> Submit Suggestion
+      </button>
+      <div id="stuSugMsg2" class="mt-2"></div>
+
+      <!-- My posted suggestions -->
+      <div class="mt-4" id="mySuggestionsSection">
+        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">My Previous Suggestions</div>
+        <div id="stuMySuggestions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 4: Find Room + Live Feed -->
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="dash-card border-green">
+      <div class="dash-card-header">
+        <div class="dash-card-title"><i class="bi bi-search" style="color:var(--neon-green)"></i> Find a Free Room</div>
+        <a href="/" class="btn-cyber outline sm"><i class="bi bi-map"></i></a>
+      </div>
+      <input class="cyber-input mb-3" id="stuRoomSearch" placeholder="Filter by name or building…" oninput="filterRooms()"/>
+      <div id="stuRoomList" style="max-height:260px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="dash-card border-blue">
+      <div class="dash-card-title mb-3"><i class="bi bi-activity" style="color:var(--neon-blue)"></i> Live Campus Feed</div>
+      <div id="stuFeed"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+setInterval(()=>{ const e=document.getElementById('stuClock'); if(e) e.textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); },1000);
+
+let allCirculars=[], allRooms=[], myUSN='';
+
+// ── Circulars ─────────────────────────────────────────────────────────────────
+async function loadCirculars(){
+  allCirculars=await fetch('/api/circulars').then(r=>r.json());
+  document.getElementById('stuCircCount').textContent=allCirculars.length;
+  renderCirculars(allCirculars);
+}
+function filterCirculars(){
+  const f=document.getElementById('stuCircFilter').value;
+  renderCirculars(f==='all'?allCirculars:allCirculars.filter(c=>c.role===f));
+}
+function renderCirculars(list){
+  document.getElementById('stuCircularGrid').innerHTML=list.length
+    ?list.map(c=>`
+      <div class="circ-card ${c.role}">
+        <div class="circ-card-top">
+          <span class="circ-role-badge ${c.role}">${c.role==='hod'?'<i class="bi bi-person-badge-fill"></i> HOD':'<i class="bi bi-mortarboard-fill"></i> Faculty'}</span>
+          <span class="circ-date">${fmtDate(c.created_at)}</span>
+        </div>
+        <div class="circ-card-title">${c.title}</div>
+        <div class="circ-card-body">${c.content}</div>
+        <div class="circ-card-footer">Posted by ${c.posted_by}</div>
+      </div>`).join('')
+    :'<div class="text-center py-5 text-muted">No circulars yet</div>';
+}
+
+// ── Attendance ────────────────────────────────────────────────────────────────
+async function loadMyAttendance(){
+  const subject=document.getElementById('stuAttSubject').value;
+  const url='/api/attendance/summary';
+  const data=await fetch(url).then(r=>r.json());
+  // filter by subject if selected
+  let rows=data;
+  if(subject){
+    const raw=await fetch('/api/attendance?subject='+encodeURIComponent(subject)).then(r=>r.json());
+    // group by usn
+    const map={};
+    raw.forEach(r=>{
+      if(!map[r.usn]){map[r.usn]={usn:r.usn,student_name:r.student_name,total:0,present_days:0};}
+      map[r.usn].total++;
+      if(r.status==='present') map[r.usn].present_days++;
+    });
+    rows=Object.values(map).map(r=>({...r,pct:r.total>0?Math.round(r.present_days/r.total*100):0}));
+  }
+  document.getElementById('stuAttList').innerHTML=rows.length
+    ?rows.map(s=>`
+      <div class="att-summary-row">
+        <div>
+          <div style="font-size:11px;font-family:monospace;color:var(--neon-blue)">${s.usn}</div>
+          <div style="font-size:13px;font-weight:600">${s.student_name}</div>
+        </div>
+        <div style="flex:1;margin:0 14px">
+          <div class="cyber-progress">
+            <div class="cyber-progress-bar ${s.pct<75?'red':s.pct<85?'yellow':'green'}" style="width:${s.pct}%"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:3px">${s.present_days||'?'}/${s.total} classes</div>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:${s.pct<75?'var(--neon-red)':s.pct<85?'var(--neon-yellow)':'var(--neon-green)'}">
+          ${s.pct}%
+          ${s.pct<75?'<i class="bi bi-exclamation-triangle-fill" style="font-size:12px;margin-left:2px"></i>':''}
+        </div>
+      </div>`).join('')
+    :'<div class="text-center py-4 text-muted">No attendance data</div>';
+}
+
+// ── Suggestions ───────────────────────────────────────────────────────────────
+async function submitSuggestion(){
+  const usn=document.getElementById('stuUSN').value.trim();
+  const subject=document.getElementById('stuSugSubject').value;
+  const message=document.getElementById('stuSugMsg').value.trim();
+  if(!message){alert('Please write your suggestion');return;}
+  const res=await fetch('/api/suggestions',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({usn,subject,message})}).then(r=>r.json());
+  const msg=document.getElementById('stuSugMsg2');
+  if(res.ok){
+    myUSN=usn;
+    msg.innerHTML=`<div class="cyber-alert success"><i class="bi bi-check-circle"></i> Suggestion submitted!</div>`;
+    document.getElementById('stuSugMsg').value='';
+    setTimeout(()=>msg.innerHTML='',3000);
+    document.getElementById('stuMySugCount').textContent=
+      parseInt(document.getElementById('stuMySugCount').textContent||0)+1;
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStuStats(){
+  const [sum, res] = await Promise.all([
+    fetch('/api/analytics/summary').then(r=>r.json()),
+    fetch('/api/resources').then(r=>r.json()),
+  ]);
+  document.getElementById('stuAvail').textContent   = sum.rooms.available;
+  document.getElementById('stuFreeRes').textContent = res.filter(r=>r.status==='available').length;
+}
+
+// ── Rooms ─────────────────────────────────────────────────────────────────────
+async function loadRooms(){
+  const data=await fetch('/api/campus/status').then(r=>r.json());
+  allRooms=data.rooms.filter(r=>r.status==='available');
+  renderRooms(allRooms);
+}
+function filterRooms(){
+  const q=document.getElementById('stuRoomSearch').value.toLowerCase();
+  renderRooms(allRooms.filter(r=>r.name.toLowerCase().includes(q)||r.building.toLowerCase().includes(q)));
+}
+function renderRooms(rooms){
+  document.getElementById('stuRoomList').innerHTML=rooms.length
+    ?rooms.map(r=>`
+      <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div class="d-flex gap-3 align-items-center">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--neon-green);box-shadow:0 0 6px var(--neon-green)"></div>
+          <div><div style="font-size:13px;font-weight:600">${r.name}</div><div style="font-size:11px;color:var(--text-muted)">${r.building} · ${r.type}</div></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--neon-green)">${r.occupancy}/${r.capacity}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${Math.round(r.occupancy/r.capacity*100)}% full</div>
+        </div>
+      </div>`).join('')
+    :'<div class="text-center py-4 text-muted">No rooms available</div>';
+}
+
+// ── Feed ──────────────────────────────────────────────────────────────────────
+async function loadFeed(){
+  const events=await fetch('/api/feed').then(r=>r.json());
+  const typeMap={
+    issue:{icon:'bi-exclamation-circle-fill',color:'var(--neon-red)'},
+    maintenance:{icon:'bi-wrench-fill',color:'var(--neon-purple)'},
+    status:{icon:'bi-arrow-repeat',color:'var(--neon-blue)'},
+    ok:{icon:'bi-check-circle-fill',color:'var(--neon-green)'},
+  };
+  function timeAgo(iso){
+    const d=Math.floor((Date.now()-new Date(iso))/1000);
+    if(d<60) return d+'s ago'; if(d<3600) return Math.floor(d/60)+'m ago';
+    return Math.floor(d/3600)+'h ago';
+  }
+  document.getElementById('stuFeed').innerHTML=events.slice(0,8).map(e=>{
+    const t=typeMap[e.type]||typeMap.status;
+    return `<div class="feed-item">
+      <div class="feed-dot ${e.type}"></div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500"><i class="bi ${t.icon}" style="color:${t.color};margin-right:4px"></i>${e.msg}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${e.location} · ${timeAgo(e.ts)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtDate(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function refreshStudent(){
+  await Promise.all([loadStuStats(),loadCirculars(),loadMyAttendance(),loadRooms(),loadFeed()]);
+}
+refreshStudent();
+setInterval(refreshStudent,30000);
+</script>
+{% endblock %}

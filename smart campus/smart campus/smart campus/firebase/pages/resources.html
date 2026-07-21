@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Resources — Smart Campus</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+<link href="../css/style.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="bg-fx" id="bgFx"></div>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><div class="brand-icon"><i class="bi bi-cpu-fill"></i></div>
+    <div class="brand-text"><div class="brand-title">SmartCampus</div><div class="brand-sub">Digital Twin v3.0</div></div></div>
+  <div class="sidebar-status"><span class="pulse-dot"></span><span>Firebase Live</span>
+    <span class="ms-auto" style="font-size:10px;color:var(--muted)" id="sidebarClock"></span></div>
+  <ul class="sidebar-nav">
+    <li><a href="../index.html" class="nav-link"><i class="bi bi-map-fill"></i><span class="nav-label">Campus Twin</span></a></li>
+    <li><a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i><span class="nav-label">Dashboard</span></a></li>
+    <li><a href="issues.html" class="nav-link"><i class="bi bi-exclamation-triangle-fill"></i><span class="nav-label">Issue Engine</span><span class="nav-badge" id="openIssuesBadge">–</span></a></li>
+    <li><a href="maintenance.html" class="nav-link"><i class="bi bi-tools"></i><span class="nav-label">Maintenance AI</span></a></li>
+    <li><a href="analytics.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i><span class="nav-label">Analytics</span></a></li>
+    <li><a href="resources.html" class="nav-link active"><i class="bi bi-box-seam-fill"></i><span class="nav-label">Resources</span></a></li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="sf-item"><i class="bi bi-building" style="color:var(--blue)"></i><span class="sf-label" id="sfRooms">–</span></div>
+    <div class="sf-item"><i class="bi bi-exclamation-circle" style="color:var(--red)"></i><span class="sf-label" id="sfIssues">–</span></div>
+  </div>
+</nav>
+
+<div class="main-content" id="mainContent">
+  <header class="topbar">
+    <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+    <div class="topbar-title"><i class="bi bi-box-seam-fill me-2" style="color:var(--orange)"></i>Resource Exchange</div>
+    <div class="topbar-right">
+      <div class="live-pill"><span class="pulse-dot"></span>LIVE</div>
+      <div class="topbar-stat"><i class="bi bi-building"></i><span id="tbAvail">–</span></div>
+      <div class="topbar-stat" style="color:var(--yellow)"><i class="bi bi-exclamation-circle"></i><span id="tbIssues">–</span></div>
+      <button class="notif-btn"><i class="bi bi-bell-fill"></i><span class="notif-dot" id="notifBadge">0</span></button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- Stats -->
+    <div class="row g-3 mb-4" id="resStats"></div>
+
+    <div class="row g-3">
+      <!-- Grid -->
+      <div class="col-lg-9">
+        <div class="glass-card mb-3" style="padding:14px">
+          <div class="d-flex gap-2 flex-wrap align-items-center">
+            <span style="font-size:12px;color:var(--muted)">Filter:</span>
+            <button class="btn-cyber outline sm res-filter active" data-f="all">All</button>
+            <button class="btn-cyber outline sm res-filter" data-f="available">Available</button>
+            <button class="btn-cyber outline sm res-filter" data-f="busy">In Use</button>
+            <button class="btn-cyber outline sm res-filter" data-f="fault">Fault</button>
+            <div class="ms-auto">
+              <select class="cyber-select" id="typeFilter" style="width:150px;padding:5px 10px;font-size:12px">
+                <option value="">All Types</option>
+                <option value="projector">Projectors</option>
+                <option value="pc">PCs</option>
+                <option value="server">Servers</option>
+                <option value="wifi">WiFi Nodes</option>
+                <option value="3d_printer">3D Printers</option>
+                <option value="microscope">Microscopes</option>
+                <option value="av_system">AV Systems</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3" id="resGrid"></div>
+      </div>
+
+      <!-- Reserve panel -->
+      <div class="col-lg-3">
+        <div class="glass-card" style="position:sticky;top:70px">
+          <div class="sec-title mb-3"><i class="bi bi-calendar-check-fill"></i>Reserve Resource</div>
+          <div id="reserveForm" style="display:none">
+            <div class="mb-3 p-3" style="background:rgba(0,212,255,0.08);border-radius:9px;border:1px solid rgba(0,212,255,0.2)">
+              <div style="font-size:13px;font-weight:600" id="rName">–</div>
+              <div style="font-size:11px;color:var(--muted)" id="rLoc">–</div>
+            </div>
+            <div class="mb-3">
+              <label class="cyber-label">Your Name</label>
+              <input type="text" class="cyber-input" id="rUser" placeholder="Enter your name"/>
+            </div>
+            <div class="mb-3">
+              <label class="cyber-label">Duration</label>
+              <select class="cyber-select" id="rHours">
+                <option value="1">1 hour</option><option value="2">2 hours</option>
+                <option value="3">3 hours</option><option value="4">4 hours</option>
+                <option value="8">Full day (8h)</option>
+              </select>
+            </div>
+            <button class="btn-cyber primary w-100 mb-2" onclick="confirmReserve()">
+              <i class="bi bi-calendar-check"></i>Confirm</button>
+            <button class="btn-cyber outline sm w-100" onclick="cancelReserve()">Cancel</button>
+          </div>
+          <div id="reservePlaceholder" style="text-align:center;padding:20px;color:var(--muted)">
+            <i class="bi bi-hand-index" style="font-size:32px;display:block;margin-bottom:8px"></i>
+            <div style="font-size:13px">Click Reserve on any available resource</div>
+          </div>
+        </div>
+        <div class="glass-card mt-3">
+          <div class="sec-title mb-3"><i class="bi bi-pie-chart"></i>By Type</div>
+          <div class="chart-wrap" style="max-height:180px"><canvas id="typeChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script type="module">
+import { db, C, seedIfEmpty, collection, doc, updateDoc, onSnapshot, serverTimestamp }
+  from "../js/firebase-config.js";
+import { doughnutChart, PALETTE } from "../js/charts.js";
+import { showToast, startClock, initSidebar, statusBadge, progressBar, animateCount }
+  from "../js/app.js";
+import { predictFailureRisk } from "../js/ai-engine.js";
+
+(function(){ const c=document.getElementById("bgFx"); for(let i=0;i<28;i++){const p=document.createElement("div");p.className="particle";p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${2+Math.random()*4}px;height:${2+Math.random()*4}px;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*12}s`;c.appendChild(p);}})();
+startClock("sidebarClock"); initSidebar();
+
+let allRes=[], statusFilter="all", typeFilter="", selectedId=null, typeChart=null;
+
+const TYPE_ICONS = {
+  projector:"bi-projector-fill", pc:"bi-pc-display", server:"bi-server",
+  wifi:"bi-wifi", "3d_printer":"bi-printer-fill", microscope:"bi-eye-fill", av_system:"bi-camera-video-fill",
+};
+
+async function init() {
+  await seedIfEmpty();
+  onSnapshot(collection(db, C.RESOURCES), snap=>{
+    allRes=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderStats(); renderGrid(); renderTypeChart();
+  });
+  onSnapshot(collection(db, C.ISSUES), snap=>{
+    const open=snap.docs.filter(d=>d.data().status==="open").length;
+    document.getElementById("openIssuesBadge").textContent=open;
+    document.getElementById("notifBadge").textContent=open;
+    document.getElementById("tbIssues").textContent=open;
+    document.getElementById("sfIssues").textContent=open+" issues";
+  });
+}
+
+function renderStats() {
+  const avail=allRes.filter(r=>r.status==="available").length;
+  const busy=allRes.filter(r=>r.status==="busy").length;
+  const fault=allRes.filter(r=>r.status==="fault").length;
+  document.getElementById("resStats").innerHTML=`
+    <div class="col-6 col-md-3"><div class="stat-card blue" style="padding:14px">
+      <div class="stat-icon blue" style="width:40px;height:40px;font-size:18px"><i class="bi bi-box-seam"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--blue)">${allRes.length}</div><div class="stat-label">Total</div></div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="stat-card green" style="padding:14px">
+      <div class="stat-icon green" style="width:40px;height:40px;font-size:18px"><i class="bi bi-check-circle"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--green)">${avail}</div><div class="stat-label">Available</div></div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="stat-card yellow" style="padding:14px">
+      <div class="stat-icon yellow" style="width:40px;height:40px;font-size:18px"><i class="bi bi-clock"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--yellow)">${busy}</div><div class="stat-label">In Use</div></div>
+    </div></div>
+    <div class="col-6 col-md-3"><div class="stat-card red" style="padding:14px">
+      <div class="stat-icon red" style="width:40px;height:40px;font-size:18px"><i class="bi bi-x-circle"></i></div>
+      <div><div class="stat-value" style="font-size:24px;color:var(--red)">${fault}</div><div class="stat-label">Fault</div></div>
+    </div></div>`;
+  document.getElementById("tbAvail").textContent=avail;
+  document.getElementById("sfRooms").textContent=allRes.length+" resources";
+}
+
+function renderGrid() {
+  let data=allRes;
+  if(statusFilter!=="all") data=data.filter(r=>r.status===statusFilter);
+  if(typeFilter) data=data.filter(r=>r.type===typeFilter);
+  if(!data.length){
+    document.getElementById("resGrid").innerHTML=`<div class="col-12"><div class="glass-card text-center py-5" style="color:var(--muted)"><i class="bi bi-inbox" style="font-size:32px"></i><div class="mt-2">No resources found</div></div></div>`;
+    return;
+  }
+  document.getElementById("resGrid").innerHTML=data.map(r=>{
+    const days=r.lastMaintenance?Math.floor((Date.now()-new Date(r.lastMaintenance))/86400000):90;
+    const pred=predictFailureRisk(r.healthScore,days);
+    const icon=TYPE_ICONS[r.type]||"bi-box";
+    const hc=r.healthScore>70?"var(--green)":r.healthScore>40?"var(--yellow)":"var(--red)";
+    const borderColor=r.status==="available"?"var(--green)":r.status==="busy"?"var(--yellow)":"var(--red)";
+    return `<div class="col-sm-6 col-xl-4">
+      <div class="glass-card" style="padding:16px;border-top:2px solid ${borderColor}">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="stat-icon ${r.status==="available"?"green":r.status==="busy"?"yellow":"red"}" style="width:40px;height:40px;font-size:18px">
+            <i class="bi ${icon}"></i></div>
+          ${statusBadge(r.status)}
+        </div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+          <i class="bi bi-geo-alt"></i> ${r.location} · ${r.type.replace("_"," ")}</div>
+        <div class="d-flex justify-content-between mb-1">
+          <span style="font-size:11px;color:var(--muted)">Health</span>
+          <span style="font-size:11px;font-weight:600;color:${hc}">${r.healthScore}%</span>
+        </div>
+        ${progressBar(r.healthScore, r.healthScore>70?"green":r.healthScore>40?"yellow":"red")}
+        <div class="d-flex justify-content-between mt-2 mb-3">
+          <span style="font-size:11px;color:var(--muted)">Failure Risk</span>
+          <span style="font-size:11px;font-weight:600;color:${pred.label==="Critical"?"var(--red)":pred.label==="Warning"?"var(--yellow)":"var(--green)"}">${pred.risk}% · ${pred.label}</span>
+        </div>
+        ${r.reservedBy?`<div style="font-size:11px;color:var(--muted);margin-bottom:8px"><i class="bi bi-person-fill"></i> ${r.reservedBy}</div>`:""}
+        <div class="d-flex gap-2">
+          ${r.status==="available"?`<button class="btn-cyber primary sm flex-fill" onclick="startReserve('${r.id}','${r.name}','${r.location}')"><i class="bi bi-calendar-plus"></i> Reserve</button>`:""}
+          ${r.status==="busy"?`<button class="btn-cyber outline sm flex-fill" onclick="releaseRes('${r.id}')"><i class="bi bi-unlock"></i> Release</button>`:""}
+          ${r.status==="fault"?`<span style="font-size:11px;color:var(--red)"><i class="bi bi-tools"></i> Needs repair</span>`:""}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderTypeChart() {
+  const types={};
+  allRes.forEach(r=>{ types[r.type]=(types[r.type]||0)+1; });
+  const labels=Object.keys(types).map(t=>t.replace("_"," "));
+  const vals=Object.values(types);
+  const pal=["blue","purple","green","yellow","red","orange","blue"];
+  if(typeChart) typeChart.destroy();
+  typeChart=doughnutChart("typeChart",labels,vals,pal.slice(0,labels.length),{cutout:"55%"});
+}
+
+window.startReserve=function(id,name,loc){
+  selectedId=id;
+  document.getElementById("rName").textContent=name;
+  document.getElementById("rLoc").textContent=loc;
+  document.getElementById("reserveForm").style.display="block";
+  document.getElementById("reservePlaceholder").style.display="none";
+};
+window.cancelReserve=function(){
+  selectedId=null;
+  document.getElementById("reserveForm").style.display="none";
+  document.getElementById("reservePlaceholder").style.display="block";
+};
+window.confirmReserve=async function(){
+  const user=document.getElementById("rUser").value.trim();
+  if(!user){ showToast("Please enter your name","error"); return; }
+  const hours=parseInt(document.getElementById("rHours").value);
+  const until=new Date(Date.now()+hours*3600000).toISOString();
+  await updateDoc(doc(db,C.RESOURCES,selectedId),{ status:"busy", reservedBy:user, reservedUntil:until });
+  cancelReserve();
+  showToast(`Reserved for ${hours}h by ${user}`,"success");
+};
+window.releaseRes=async function(id){
+  await updateDoc(doc(db,C.RESOURCES,id),{ status:"available", reservedBy:null, reservedUntil:null });
+  showToast("Resource released","success");
+};
+
+document.querySelectorAll(".res-filter").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".res-filter").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active"); statusFilter=btn.dataset.f; renderGrid();
+  });
+});
+document.getElementById("typeFilter").addEventListener("change",e=>{ typeFilter=e.target.value; renderGrid(); });
+
+init();
+</script>
+</body>
+</html>
