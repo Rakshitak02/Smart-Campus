@@ -4,7 +4,7 @@ Smart Campus Tracker
 📌 About the Project
 Smart Campus Tracker is a web-based application designed to simplify campus management by providing a centralized platform for students and administrators. The system helps manage academic and campus-related activities efficiently.
 
-💻 Technologies Used
+💻 Technologies Used:
 HTML
 CSS
 JavaScript
